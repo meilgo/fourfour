@@ -1,0 +1,49 @@
+//// Samples From Mars © 2023/////   
+
+<group> group_label=Hi Hat
+group=1 off_by=1                                                             
+
+<region> sample=..\..\..\WAV\02. Clerb Kit\CH Degraded Vinyl 06.wav lokey=42 hikey=42 end=9888 pitch_keycenter=42 bend_up=200 bend_down=-200 volume=-6 amp_veltrack=40.944881 ampeg_release=20 pitchlfo_freq=0.1 
+
+<region> sample=..\..\..\WAV\02. Clerb Kit\OH Degraded Vinyl 02.wav lokey=44 hikey=44 end=9443 pitch_keycenter=44 bend_up=200 bend_down=-200 volume=-6 amp_veltrack=40.944881 ampeg_release=20 pitchlfo_freq=0.1 
+
+<group> group_label=BD
+
+<region> sample=..\..\..\WAV\02. Clerb Kit\BD Dark Hard Vinyl.wav lokey=37 hikey=37 end=17185 pitch_keycenter=37 bend_up=200 bend_down=-200 volume=-6 amp_veltrack=40.944881 ampeg_release=20 pitchlfo_freq=0.1 
+
+<region> sample=..\..\..\WAV\02. Clerb Kit\BD Knock Hard Vinyl.wav lokey=36 hikey=36 end=7533 pitch_keycenter=36 bend_up=200 bend_down=-200 volume=-6 amp_veltrack=40.944881 ampeg_release=20 pitchlfo_freq=0.1 
+
+<group> group_label=SD
+
+<region> sample=..\..\..\WAV\02. Clerb Kit\SD Degraded Vinyl 16.wav lokey=38 hikey=38 end=8013 pitch_keycenter=38 bend_up=200 bend_down=-200 volume=-6 amp_veltrack=40.944881 ampeg_release=20 pitchlfo_freq=0.1 
+
+<region> sample=..\..\..\WAV\02. Clerb Kit\SD Vari Vinyl 11.wav lokey=46 hikey=46 end=4414 pitch_keycenter=46 bend_up=200 bend_down=-200 volume=-6 amp_veltrack=40.944881 ampeg_release=20 pitchlfo_freq=0.1 
+
+<group> group_label=Tom
+
+<region> sample=..\..\..\WAV\02. Clerb Kit\Tom M44 Vinyl 01.wav lokey=49 hikey=49 end=30501 pitch_keycenter=49 bend_up=200 bend_down=-200 volume=-6 amp_veltrack=40.944881 ampeg_release=20 pitchlfo_freq=0.1 
+
+<region> sample=..\..\..\WAV\02. Clerb Kit\Tom M44 Vinyl 02.wav lokey=50 hikey=50 end=21183 pitch_keycenter=50 bend_up=200 bend_down=-200 volume=-6 amp_veltrack=40.944881 ampeg_release=20 pitchlfo_freq=0.1 
+
+<group> group_label=Cymbal
+
+<region> sample=..\..\..\WAV\02. Clerb Kit\Ride Lite Bell Vinyl 01.wav lokey=51 hikey=51 end=143820 pitch_keycenter=51 bend_up=200 bend_down=-200 volume=-6 amp_veltrack=40.944881 ampeg_release=20 pitchlfo_freq=0.1 
+
+<group> group_label=Clap & Rim
+
+<region> sample=..\..\..\WAV\02. Clerb Kit\Clap Degraded Vinyl 04.wav lokey=40 hikey=40 end=8480 pitch_keycenter=40 bend_up=200 bend_down=-200 volume=-6 amp_veltrack=40.944881 ampeg_release=20 pitchlfo_freq=0.1 
+
+<region> sample=..\..\..\WAV\02. Clerb Kit\Clap Vari Vinyl 03.wav lokey=41 hikey=41 end=12537 pitch_keycenter=41 bend_up=200 bend_down=-200 volume=-6 amp_veltrack=40.944881 ampeg_release=20 pitchlfo_freq=0.1 
+
+<region> sample=..\..\..\WAV\02. Clerb Kit\Rim FX Verb Vinyl 04.wav lokey=39 hikey=39 end=10324 pitch_keycenter=39 bend_up=200 bend_down=-200 volume=-6 amp_veltrack=40.944881 ampeg_release=20 pitchlfo_freq=0.1 
+
+<region> sample=..\..\..\WAV\02. Clerb Kit\Snap FX Verb Dark Vinyl 02.wav lokey=43 hikey=43 end=63480 pitch_keycenter=43 bend_up=200 bend_down=-200 volume=-6 amp_veltrack=40.944881 ampeg_release=20 pitchlfo_freq=0.1 
+
+<group> group_label=Perc
+
+<region> sample=..\..\..\WAV\02. Clerb Kit\Clave Degraded Black Vinyl 03.wav lokey=45 hikey=45 end=6256 pitch_keycenter=45 bend_up=200 bend_down=-200 volume=-6 amp_veltrack=40.944881 ampeg_release=20 pitchlfo_freq=0.1 
+
+<region> sample=..\..\..\WAV\02. Clerb Kit\Shaker Degraded Car Vinyl 05.wav lokey=47 hikey=47 end=6270 pitch_keycenter=47 bend_up=200 bend_down=-200 volume=-6 amp_veltrack=40.944881 ampeg_release=20 pitchlfo_freq=0.1 
+
+<region> sample=..\..\..\WAV\02. Clerb Kit\Tamb Two Hit Vinyl 02.wav lokey=48 hikey=48 end=27624 pitch_keycenter=48 bend_up=200 bend_down=-200 volume=-6 amp_veltrack=40.944881 ampeg_release=20 pitchlfo_freq=0.1 
+

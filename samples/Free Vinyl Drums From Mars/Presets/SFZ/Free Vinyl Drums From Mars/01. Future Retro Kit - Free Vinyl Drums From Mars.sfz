@@ -1,0 +1,49 @@
+//// Samples From Mars © 2023/////                                                                
+
+<group> group_label=Hi Hat
+group=1 off_by=1
+
+<region> sample=..\..\..\WAV\01. Future Retro Kit\CH Color Hi Vinyl 03.wav lokey=45 hikey=45 end=4598 pitch_keycenter=45 bend_up=200 bend_down=-200 volume=-6 amp_veltrack=40.944881 ampeg_release=20 pitchlfo_freq=0.1 
+
+<region> sample=..\..\..\WAV\01. Future Retro Kit\CH Color Vinyl 03.wav lokey=43 hikey=43 end=8830 pitch_keycenter=43 bend_up=200 bend_down=-200 volume=-6 amp_veltrack=40.944881 ampeg_release=20 pitchlfo_freq=0.1 
+
+<region> sample=..\..\..\WAV\01. Future Retro Kit\CH Color Vinyl 08.wav lokey=42 hikey=42 end=13351 pitch_keycenter=42 bend_up=200 bend_down=-200 volume=-6 amp_veltrack=40.944881 ampeg_release=20 pitchlfo_freq=0.1 
+
+<region> sample=..\..\..\WAV\01. Future Retro Kit\OH Clean Vinyl 05.wav lokey=46 hikey=46 end=22024 pitch_keycenter=46 bend_up=200 bend_down=-200 volume=-6 amp_veltrack=40.944881 ampeg_release=20 pitchlfo_freq=0.1 
+
+<region> sample=..\..\..\WAV\01. Future Retro Kit\OH Clean Vinyl 06.wav lokey=44 hikey=44 end=52134 pitch_keycenter=44 bend_up=200 bend_down=-200 volume=-6 amp_veltrack=40.944881 ampeg_release=20 pitchlfo_freq=0.1 
+
+<group> group_label=BD
+
+<region> sample=..\..\..\WAV\01. Future Retro Kit\BD Clean Vinyl 07.wav lokey=36 hikey=36 end=22321 pitch_keycenter=36 bend_up=200 bend_down=-200 volume=-6 amp_veltrack=40.944881 ampeg_release=20 pitchlfo_freq=0.1 
+
+<region> sample=..\..\..\WAV\01. Future Retro Kit\BD Clean Vinyl 11.wav lokey=37 hikey=37 end=23241 pitch_keycenter=37 bend_up=200 bend_down=-200 volume=-6 amp_veltrack=40.944881 ampeg_release=20 pitchlfo_freq=0.1 
+
+<group> group_label=SD
+
+<region> sample=..\..\..\WAV\01. Future Retro Kit\SD Degraded Vinyl 06.wav lokey=38 hikey=38 end=9815 pitch_keycenter=38 bend_up=200 bend_down=-200 volume=-6 amp_veltrack=40.944881 ampeg_release=20 pitchlfo_freq=0.1 
+
+<group> group_label=Tom
+
+<region> sample=..\..\..\WAV\01. Future Retro Kit\Tom FX Tremolo Vinyl 01.wav lokey=50 hikey=50 end=95196 pitch_keycenter=50 bend_up=200 bend_down=-200 volume=-6 amp_veltrack=40.944881 ampeg_release=20 pitchlfo_freq=0.1 
+
+<region> sample=..\..\..\WAV\01. Future Retro Kit\Tom Silky Vinyl 02.wav lokey=48 hikey=48 end=27452 pitch_keycenter=48 bend_up=200 bend_down=-200 volume=-6 amp_veltrack=40.944881 ampeg_release=20 pitchlfo_freq=0.1 
+
+<group> group_label=Cymbal
+
+<region> sample=..\..\..\WAV\01. Future Retro Kit\Crash FX Wobble Vinyl 01.wav lokey=51 hikey=51 end=122651 pitch_keycenter=51 bend_up=200 bend_down=-200 volume=-6 amp_veltrack=40.944881 ampeg_release=20 pitchlfo_freq=0.1 
+
+<region> sample=..\..\..\WAV\01. Future Retro Kit\Ride FX Phaser Vinyl 03.wav lokey=49 hikey=49 end=300669 pitch_keycenter=49 bend_up=200 bend_down=-200 volume=-6 amp_veltrack=40.944881 ampeg_release=20 pitchlfo_freq=0.1 
+
+<group> group_label=Clap & Rim
+
+<region> sample=..\..\..\WAV\01. Future Retro Kit\Clap Clean Vinyl 03.wav lokey=40 hikey=40 end=5033 pitch_keycenter=40 bend_up=200 bend_down=-200 volume=-6 amp_veltrack=40.944881 ampeg_release=20 pitchlfo_freq=0.1 
+
+<region> sample=..\..\..\WAV\01. Future Retro Kit\Rim Tube Vinyl 03.wav lokey=39 hikey=39 end=3148 pitch_keycenter=39 bend_up=200 bend_down=-200 volume=-6 amp_veltrack=40.944881 ampeg_release=20 pitchlfo_freq=0.1 
+
+<region> sample=..\..\..\WAV\01. Future Retro Kit\Snap FX Verb Lite Vinyl 01.wav lokey=41 hikey=41 end=43734 pitch_keycenter=41 bend_up=200 bend_down=-200 volume=-6 amp_veltrack=40.944881 ampeg_release=20 pitchlfo_freq=0.1 
+
+<group> group_label=Perc
+
+<region> sample=..\..\..\WAV\01. Future Retro Kit\Shaker Hard Vinyl.wav lokey=47 hikey=47 end=10934 pitch_keycenter=47 bend_up=200 bend_down=-200 volume=-6 amp_veltrack=40.944881 ampeg_release=20 pitchlfo_freq=0.1 
+

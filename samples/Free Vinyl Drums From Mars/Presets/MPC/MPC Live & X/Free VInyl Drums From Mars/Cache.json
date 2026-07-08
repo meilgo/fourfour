@@ -1,0 +1,46 @@
+{
+    "value0": {
+        "formatVersion": 1,
+        "programs": [
+            "Free Vinyl Drums From Mars 01.xpm"
+        ],
+        "samples": [
+            "BD Clean Vinyl 07.WAV",
+            "BD Clean Vinyl 11.WAV",
+            "BD Dark Hard Vinyl.WAV",
+            "BD Knock Hard Vinyl.WAV",
+            "CH Color Hi Vinyl 03.WAV",
+            "CH Color Vinyl 03.WAV",
+            "CH Color Vinyl 08.WAV",
+            "CH Degraded Vinyl 06.WAV",
+            "Clap Clean Vinyl 03.WAV",
+            "Clap Degraded Vinyl 04.WAV",
+            "Clap Vari Vinyl 03.WAV",
+            "Clave Degraded Black Vinyl 03.WAV",
+            "Crash FX Wobble Vinyl 01.WAV",
+            "OH Clean Vinyl 05.WAV",
+            "OH Clean Vinyl 06.WAV",
+            "OH Degraded Vinyl 02.WAV",
+            "Ride FX Phaser Vinyl 03.WAV",
+            "Ride Lite Bell Vinyl 01.WAV",
+            "Rim FX Verb Vinyl 04.WAV",
+            "Rim Tube Vinyl 03.WAV",
+            "SD Degraded Vinyl 06.WAV",
+            "SD Degraded Vinyl 16.WAV",
+            "SD Vari Vinyl 11.WAV",
+            "Shaker Degraded Car Vinyl 05.WAV",
+            "Shaker Hard Vinyl.WAV",
+            "Snap FX Verb Dark Vinyl 02.WAV",
+            "Snap FX Verb Lite Vinyl 01.WAV",
+            "Tamb Two Hit Vinyl 02.WAV",
+            "Tom FX Tremolo Vinyl 01.WAV",
+            "Tom M44 Vinyl 01.WAV",
+            "Tom M44 Vinyl 02.WAV",
+            "Tom Silky Vinyl 02.WAV"
+        ],
+        "sequences": [],
+        "patterns": [],
+        "projects": [],
+        "progressions": []
+    }
+}

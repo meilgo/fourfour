@@ -1,0 +1,40 @@
+/////////////////////////////////////////////////////////////////////////////
+// sfz definition file
+// copyright Chicken Systems, Inc.
+// -------------------------------------------------------------------------
+// Application: Translator 6 6.1, Build 3
+// Vendor: 
+
+
+<region> sample=..\..\WAV\Cleancut Kit\Cowbell 808 Color Short 03.wav lokey=74 hikey=74 end=27212 pitch_keycenter=74 bend_up=200 bend_down=-200 volume=-6 amp_veltrack=40.944881 ampeg_release=20 pitchlfo_freq=0.1 
+
+<region> sample=..\..\WAV\Cleancut Kit\Cym A 808 Tape Decay C 01.wav lokey=70 hikey=70 end=171106 pitch_keycenter=70 bend_up=200 bend_down=-200 volume=-6 amp_veltrack=40.944881 ampeg_release=20 pitchlfo_freq=0.1 
+
+<region> sample=..\..\WAV\Cleancut Kit\Maracas B 808 Tape.wav lokey=71 hikey=71 end=1891 pitch_keycenter=71 bend_up=200 bend_down=-200 volume=-6 amp_veltrack=40.944881 ampeg_release=20 pitchlfo_freq=0.1 
+
+<region> sample=..\..\WAV\Cleancut Kit\CH A 808 Tape.wav lokey=66 hikey=66 end=4952 pitch_keycenter=66 bend_up=200 bend_down=-200 volume=-6 amp_veltrack=40.944881 ampeg_release=20 pitchlfo_freq=0.1 
+
+<region> sample=..\..\WAV\Cleancut Kit\OH 808 Tape Decay 02.wav lokey=68 hikey=68 end=6644 pitch_keycenter=68 bend_up=200 bend_down=-200 volume=-6 amp_veltrack=40.944881 ampeg_release=20 pitchlfo_freq=0.1 
+
+<region> sample=..\..\WAV\Cleancut Kit\BD 808 Mid Color A 05.wav lokey=62 hikey=62 end=8545 pitch_keycenter=62 bend_up=200 bend_down=-200 volume=-6 amp_veltrack=40.944881 ampeg_release=20 pitchlfo_freq=0.1 
+
+<region> sample=..\..\WAV\Cleancut Kit\BD 808 Noise 01.wav lokey=64 hikey=64 end=126835 pitch_keycenter=64 bend_up=200 bend_down=-200 volume=-6 amp_veltrack=40.944881 ampeg_release=20 pitchlfo_freq=0.1 
+
+<region> sample=..\..\WAV\Cleancut Kit\BD 808 Sat Click Decay B 02.wav lokey=60 hikey=60 end=38603 pitch_keycenter=60 bend_up=200 bend_down=-200 volume=-6 amp_veltrack=40.944881 ampeg_release=20 pitchlfo_freq=0.1 
+
+<region> sample=..\..\WAV\Cleancut Kit\Clap 808 Color 03.wav lokey=75 hikey=75 end=35453 pitch_keycenter=75 bend_up=200 bend_down=-200 volume=-6 amp_veltrack=40.944881 ampeg_release=20 pitchlfo_freq=0.1 
+
+<region> sample=..\..\WAV\Cleancut Kit\Clap A 808.wav lokey=73 hikey=73 end=50612 pitch_keycenter=73 bend_up=200 bend_down=-200 volume=-6 amp_veltrack=40.944881 ampeg_release=20 pitchlfo_freq=0.1 
+
+<region> sample=..\..\WAV\Cleancut Kit\Rim Shot A 808 Tape.wav lokey=72 hikey=72 end=1128 pitch_keycenter=72 bend_up=200 bend_down=-200 volume=-6 amp_veltrack=40.944881 ampeg_release=20 pitchlfo_freq=0.1 
+
+<region> sample=..\..\WAV\Cleancut Kit\SD 808 Crisp B 02.wav lokey=61 hikey=61 end=11801 pitch_keycenter=61 bend_up=200 bend_down=-200 volume=-6 amp_veltrack=40.944881 ampeg_release=20 pitchlfo_freq=0.1 
+
+<region> sample=..\..\WAV\Cleancut Kit\SD B 808 Tape Tone C 06.wav lokey=63 hikey=63 end=6048 pitch_keycenter=63 bend_up=200 bend_down=-200 volume=-6 amp_veltrack=40.944881 ampeg_release=20 pitchlfo_freq=0.1 
+
+<region> sample=..\..\WAV\Cleancut Kit\Tom Hi A 808 08.wav lokey=69 hikey=69 end=19828 pitch_keycenter=69 bend_up=200 bend_down=-200 volume=-6 amp_veltrack=40.944881 ampeg_release=20 pitchlfo_freq=0.1 
+
+<region> sample=..\..\WAV\Cleancut Kit\Tom Low A 808 03.wav lokey=65 hikey=65 end=34544 pitch_keycenter=65 bend_up=200 bend_down=-200 volume=-6 amp_veltrack=40.944881 ampeg_release=20 pitchlfo_freq=0.1 
+
+<region> sample=..\..\WAV\Cleancut Kit\Tom Mid A 808 08.wav lokey=67 hikey=67 end=23012 pitch_keycenter=67 bend_up=200 bend_down=-200 volume=-6 amp_veltrack=40.944881 ampeg_release=20 pitchlfo_freq=0.1 
+

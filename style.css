@@ -1,0 +1,1894 @@
+:root {
+  --bg: #6a6a70;
+  --panel: #141414;
+  --panel-light: #1b1b1b;
+  --text: #f0f0f0;
+  --text-muted: #9a9a9a;
+  --border: #2f2f2f;
+  --pad: #4a4a4a;
+  --pad-hover: #5c5c5c;
+  --pad-active: #e0e0e0;
+  --pad-current: #2a2a2a;
+  --accent: #ffffff;
+  --display: #d9d9d9;
+  --shadow: rgba(0, 0, 0, 0.35);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  min-height: 100vh;
+  width: 100%;
+}
+
+body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: var(--bg);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans SC", sans-serif;
+  color: var(--text);
+  padding: 24px;
+}
+
+:root {
+  --fold-duration: 0.45s;
+  --fold-easing: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Windows 10 Reveal Highlight：鼠标悬停时 UI 元素出现跟随鼠标的精致描边 */
+.pad,
+.chip,
+.step-btn,
+.play-btn,
+.panel-toggle,
+.toggle,
+.bank-btn,
+.track-btn {
+  position: relative;
+  overflow: hidden;
+}
+
+/* 悬停时缓慢浮现的完整描边（底层） */
+.pad::before,
+.chip::before,
+.step-btn::before,
+.play-btn::before,
+.panel-toggle::before,
+.toggle::before,
+.bank-btn::before,
+.vol-bar::before,
+.track-btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 1.5px solid transparent;
+  background: linear-gradient(rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.55)) border-box;
+  -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  transform: scale(0.97);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.pad:hover::before,
+.chip:hover::before,
+.step-btn:hover::before,
+.play-btn:hover::before,
+.panel-toggle:hover::before,
+.toggle:hover::before,
+.bank-btn:hover::before,
+.vol-bar:hover::before,
+.track-btn:hover::before {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* 悬停时向外弥散的柔和光晕 */
+.pad:hover,
+.chip:hover,
+.step-btn:hover,
+.play-btn:hover,
+.panel-toggle:hover,
+.toggle:hover,
+.bank-btn:hover,
+.vol-bar:hover,
+.track-btn:hover {
+  box-shadow: 0 0 34px 8px rgba(255, 255, 255, 0.22);
+}
+
+/* 边框锐利高光（贴合 UI 轮廓，光从鼠标/已选中按钮方向扫过；toggle 配合底层描边形成完整圆环） */
+.pad::after,
+.chip::after,
+.step-btn::after,
+.play-btn::after,
+.panel-toggle::after,
+.toggle::after,
+.bank-btn::after,
+.vol-bar::after,
+.track-btn::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 1.5px solid transparent;
+  background: var(--h-grad, conic-gradient(from 0deg at 50% 50%, rgba(255, 255, 255, 0.95) 0deg, rgba(255, 255, 255, 0.55) 45deg, transparent 90deg, transparent 270deg, rgba(255, 255, 255, 0.55) 315deg, rgba(255, 255, 255, 0.95) 360deg)) border-box;
+  -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  opacity: var(--h-opacity, 0);
+  transition: opacity 0.08s linear;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* 音量条使用更细的高光描边和更紧凑的光晕 */
+.vol-bar::before,
+.vol-bar::after {
+  border-width: 0.75px;
+}
+
+.vol-bar:hover {
+  box-shadow: 0 0 14px 3px rgba(255, 255, 255, 0.25);
+}
+
+.app {
+  position: relative;
+  width: min(1360px, 100%);
+  min-width: 1120px;
+  display: flex;
+  margin: 0 auto;
+  background: var(--panel);
+  overflow: visible;
+  box-shadow: 0 24px 60px var(--shadow);
+  transition: width var(--fold-duration) var(--fold-easing);
+}
+
+.app.collapsed {
+  width: min(1320px, calc(100% - 24px));
+  min-width: 1160px;
+}
+
+/* 左侧主区域 */
+.main-area {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 22px 20px 22px 40px;
+  gap: 12px;
+  z-index: 2;
+  transition: padding var(--fold-duration) var(--fold-easing);
+}
+
+.app.collapsed .main-area {
+  padding: 24px 20px 24px 40px;
+}
+
+.top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 18px;
+}
+
+.bank-tabs {
+  margin-left: auto;
+  margin-right: 100px;
+}
+
+.app.collapsed .bank-tabs {
+  margin-right: 100px;
+}
+
+.top-bpm {
+  display: none;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+  height: 40px;
+  z-index: 20;
+}
+
+.app.collapsed .top-bpm,
+.top-bpm.leaving {
+  display: flex;
+}
+
+/* 顶部 BPM 出现动画：左侧圆点生成 -> 向右扩展成 pill -> 数字、按钮浮现 -> 最后 pill 淡出，只留数字和两侧按钮 */
+.bpm-blob {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #242424;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 0;
+  transform-origin: left center;
+  transform: translateY(-50%) scale(0.7);
+}
+
+.app.collapsed .top-bpm .bpm-blob {
+  animation: bpm-blob-enter 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes bpm-blob-enter {
+  0% {
+    opacity: 0;
+    transform: translateY(-50%) scale(0.7);
+    width: 40px;
+    border-radius: 50%;
+  }
+  12% {
+    opacity: 1;
+    transform: translateY(-50%) scale(1);
+    width: 40px;
+    border-radius: 50%;
+  }
+  30% {
+    width: 40px;
+    border-radius: 50%;
+  }
+  45% {
+    width: 110px;
+    border-radius: 20px;
+  }
+  60% {
+    width: 158px;
+    border-radius: 20px;
+    opacity: 1;
+  }
+  75% {
+    opacity: 1;
+  }
+  100% {
+    width: 158px;
+    border-radius: 20px;
+    opacity: 0;
+    transform: translateY(-50%) scale(1);
+  }
+}
+
+/* 稳定状态：隐藏中间 pill，保留数字和两侧按钮 */
+.top-bpm.settled:not(.leaving) .bpm-blob {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* 稳定状态始终保留数字可见 */
+.top-bpm.settled:not(.leaving) .bpm-value {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* 消失动画：+ 按钮先向左移动，经过数字时数字消失；与 - 按钮重合时符号隐藏成单纯圆，最后一起缩小淡出 */
+.top-bpm.leaving .bpm-blob {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.top-bpm.leaving .bpm-value {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: none;
+  animation: bpm-value-leave 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes bpm-value-leave {
+  0%, 7% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  12%, 100% {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+}
+
+.top-bpm.leaving .step-btn {
+  opacity: 1;
+  pointer-events: none;
+  animation: bpm-btn-leave 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes bpm-btn-leave {
+  0%, 45% {
+    opacity: 1;
+    transform: scale(1);
+    color: var(--text);
+  }
+  50%, 70% {
+    opacity: 1;
+    transform: scale(1);
+    color: transparent;
+  }
+  80%, 100% {
+    opacity: 0;
+    transform: scale(0.3);
+    color: transparent;
+  }
+}
+
+.top-bpm.leaving #topBpmPlus {
+  animation-name: bpm-plus-leave;
+}
+
+@keyframes bpm-plus-leave {
+  0% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+    color: var(--text);
+  }
+  45% {
+    color: var(--text);
+  }
+  50%, 70% {
+    opacity: 1;
+    transform: translateX(-118px) scale(1);
+    color: transparent;
+  }
+  80%, 100% {
+    opacity: 0;
+    transform: translateX(-118px) scale(0.3);
+    color: transparent;
+  }
+}
+
+.top-bpm .step-btn,
+.top-bpm .bpm-value {
+  opacity: 0;
+  position: relative;
+}
+
+/* 顶部 BPM 加减按钮与背景 pill 融为一体，默认无边框，悬停时显示 Reveal 高光 */
+.top-bpm .step-btn {
+  border-color: transparent;
+}
+
+.app.collapsed .top-bpm .step-btn {
+  animation: bpm-btn-pop 0.35s cubic-bezier(0.22, 1, 0.36, 1) 0.4s forwards;
+}
+
+.app.collapsed .top-bpm .bpm-value {
+  animation: bpm-value-enter 0.7s ease-out 0.45s forwards;
+}
+
+@keyframes bpm-btn-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.25);
+  }
+  70% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* 弹出动画结束后移除 transform，恢复 Reveal Highlight 的 background-attachment:fixed */
+.app.collapsed .top-bpm .step-btn.popped {
+  opacity: 1 !important;
+  transform: none !important;
+  border-color: transparent !important;
+}
+
+@keyframes bpm-value-enter {
+  0% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.top-bpm .step-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-size: 22px;
+}
+
+.top-bpm .bpm-value {
+  font-size: 24px;
+  font-weight: 600;
+  min-width: 54px;
+  text-align: center;
+}
+
+.brand {
+  transform: translateX(-8px);
+}
+
+.brand h1 {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.brand span {
+  display: block;
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.play-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--panel-light);
+  color: var(--text);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s, box-shadow 0.25s ease;
+  margin-left: -11.5px;
+}
+
+.play-btn:hover {
+  background: #252525;
+}
+
+.play-btn:active {
+  transform: scale(0.96);
+}
+
+.play-btn.playing {
+  background: var(--accent);
+  color: var(--panel);
+}
+
+.play-btn .pause-icon {
+  display: none;
+}
+
+.play-btn.playing .play-icon {
+  display: none;
+}
+
+.play-btn.playing .pause-icon {
+  display: block;
+}
+
+/* 播放按钮播放态：呼吸光晕 */
+@keyframes play-breathe {
+  0%, 100% { box-shadow: 0 0 16px 3px rgba(255, 255, 255, 0.28); }
+  50% { box-shadow: 0 0 32px 9px rgba(255, 255, 255, 0.48); }
+}
+
+.play-btn.playing {
+  animation: play-breathe 1.6s ease-in-out infinite;
+}
+
+.play-btn::before {
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+
+.play-btn::after {
+  transition: opacity 0.7s ease;
+}
+
+/* 从头播放按钮：在第一格内右对齐，与轨道标签右边缘对齐 */
+.restart-btn {
+  justify-self: end;
+  align-self: center;
+  margin-left: 0;
+}
+
+.volume-control {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-muted);
+  padding: 6px 10px;
+  border-radius: 20px;
+  border: 1px solid transparent;
+  background: transparent;
+}
+
+.volume-icon-btn {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+
+.volume-icon-btn:active {
+  transform: scale(0.96);
+}
+
+/* 非 pad 按钮统一按下反馈 */
+.chip:active,
+.step-btn:active,
+.play-btn:active,
+.panel-toggle:active,
+.bank-btn:active,
+.volume-icon-btn:active {
+  transform: scale(0.96);
+}
+
+.toggle:active .toggle-slider {
+  transform: scale(0.96);
+}
+
+.volume-icon {
+  display: block;
+  overflow: visible;
+}
+
+.volume-icon path,
+.volume-icon line {
+  vector-effect: non-scaling-stroke;
+}
+
+.vol-wave {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.volume-control.level-1 .vol-wave-1,
+.volume-control.level-2 .vol-wave-1,
+.volume-control.level-2 .vol-wave-2,
+.volume-control.level-3 .vol-wave-1,
+.volume-control.level-3 .vol-wave-2,
+.volume-control.level-3 .vol-wave-3 {
+  opacity: 1;
+}
+
+.volume-muted {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.volume-control.muted .volume-muted {
+  opacity: 1;
+}
+
+.volume-control.muted .vol-wave {
+  opacity: 0;
+}
+
+.volume-control.muted {
+  color: #666;
+}
+
+.volume-control .master-vol-track {
+  width: 100px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  opacity: 1;
+  transform: none;
+}
+
+.bpm-value {
+  width: 54px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 24px;
+  font-weight: 600;
+  text-align: center;
+  -moz-appearance: textfield;
+}
+
+.bpm-value::-webkit-outer-spin-button,
+.bpm-value::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.bpm-value:focus {
+  outline: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+/* Bank 切换按钮 */
+.bank-tabs {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.bank-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: #242424;
+  color: var(--text-muted);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, box-shadow 0.25s ease, transform 0.1s;
+}
+
+.bank-btn:hover {
+  color: var(--text);
+  border-color: #444;
+}
+
+@keyframes bank-breathe {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.15);
+  }
+  50% {
+    box-shadow: 0 0 10px 2px rgba(255, 255, 255, 0.35);
+  }
+}
+
+.bank-btn.active {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.55);
+  animation: bank-breathe 2.2s ease-in-out infinite;
+  overflow: visible;
+}
+
+.bank-btn::before {
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+
+.bank-btn::after {
+  transition: opacity 0.7s ease;
+}
+
+/* 舞台显示区 */
+.display-stage {
+  position: relative;
+  height: 140px;
+  margin-left: 80px;
+  width: calc(100% - 180px);
+  background: var(--display);
+  overflow: hidden;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.viz-grid {
+  position: absolute;
+  inset: 10px 0 0;
+  display: grid;
+  grid-template-columns: repeat(16, 1fr);
+  gap: 8px;
+  align-items: end;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.viz-bar {
+  height: 6%;
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 3px 3px 0 0;
+  transition: height 0.1s ease-out;
+}
+
+.playhead-bar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: calc((100% - 120px) / 16);
+  background: rgba(0, 0, 0, 0.08);
+  opacity: 0;
+  transition: opacity 0.1s;
+  pointer-events: none;
+}
+
+.playhead-bar.on {
+  opacity: 1;
+}
+
+/* 底部拍号标记 */
+.beat-markers {
+  position: relative;
+  display: grid;
+  grid-template-columns: 72px repeat(16, 1fr);
+  gap: 8px;
+  align-items: center;
+  justify-items: center;
+  width: calc(100% - 100px);
+  margin-top: 8px;
+}
+
+.beat-spacer {
+  grid-column: 1;
+}
+
+/* 拍号标记：40×40 圆形可点击区，与播放按钮大小一致 */
+.beat-marker {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: color 0.3s ease, transform 0.3s ease, text-shadow 0.3s ease;
+}
+
+.beat-number {
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.beat-number:hover {
+  color: #fff;
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+  transform: scale(1.2);
+}
+
+.beat-dot {
+  position: relative;
+}
+
+.beat-dot::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #666;
+  transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.beat-dot.active::before {
+  background: #fff;
+  box-shadow: 0 0 8px 1px rgba(255, 255, 255, 0.85);
+  transform: scale(1.25);
+}
+
+.beat-dot:hover::before {
+  background: #fff;
+  box-shadow: 0 0 4px 1px rgba(255, 255, 255, 0.6);
+  transform: scale(1.2);
+}
+
+/* 拍号设置 */
+.time-sig {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  height: 40px;
+  color: var(--text);
+  transform: translate(-50%, 60px);
+}
+
+.time-sig input {
+  width: 30px;
+  height: 32px;
+  padding: 0;
+  background: transparent;
+  border: 1.5px solid transparent;
+  border-radius: 4px;
+  color: inherit;
+  font-size: 22px;
+  font-weight: 700;
+  text-align: center;
+  appearance: textfield;
+  -moz-appearance: textfield;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.time-sig input::-webkit-outer-spin-button,
+.time-sig input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.time-sig input:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.time-sig input:focus {
+  outline: none;
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.35);
+  cursor: text;
+}
+
+.time-sig-slash {
+  font-size: 22px;
+  font-weight: 700;
+  color: currentColor;
+  pointer-events: none;
+}
+
+.accent-title {
+  position: absolute;
+  left: calc(100% + 54px);
+  top: calc(50% - 3px);
+  transform: translate(-50%, -50%);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.beat-number.accent-number {
+  color: var(--text-muted);
+  text-shadow: none;
+  transform: scale(1);
+}
+
+.beat-number.accent-number:hover {
+  color: #fff;
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+  transform: scale(1.2);
+}
+
+/* 重音数字播放动画：从前一列开始，到后两列结束，非线性慢-快-慢 */
+@keyframes beat-pop {
+  0% {
+    transform: scale(0.95) rotate(-1deg);
+    color: var(--text-muted);
+    text-shadow: none;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.8, 1);
+  }
+  50% {
+    transform: scale(2.05) rotate(3deg);
+    color: #fff;
+    text-shadow: 0 0 18px rgba(255, 255, 255, 1);
+    animation-timing-function: cubic-bezier(0.2, 0, 0.6, 1);
+  }
+  100% {
+    transform: scale(1.7) rotate(2deg);
+    color: #fff;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+  }
+}
+
+.beat-number.active {
+  animation: beat-pop var(--beat-accent-duration, 1.4s) forwards;
+}
+
+/* 拍号离开当前列时的缩小、暗淡、旋转回正效果 */
+.beat-number.beat-leave {
+  animation: beat-leave 0.35s ease forwards;
+}
+
+@keyframes beat-leave {
+  0% {
+    transform: scale(1.7) rotate(2deg);
+    color: #fff;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    color: var(--text-muted);
+    text-shadow: none;
+  }
+}
+
+/* 次强拍：放大和光晕幅度更小 */
+@keyframes beat-pop-weak {
+  0% {
+    transform: scale(1) rotate(0deg);
+    color: var(--text-muted);
+    text-shadow: none;
+  }
+  60% {
+    transform: scale(1.45) rotate(3deg);
+    color: #fff;
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.85);
+  }
+  100% {
+    transform: scale(1.35) rotate(2deg);
+    color: #fff;
+    text-shadow: 0 0 6px rgba(255, 255, 255, 0.7);
+  }
+}
+
+@keyframes beat-breathe-weak {
+  0%, 100% {
+    text-shadow: 0 0 4px rgba(255, 255, 255, 0.5);
+    transform: scale(1.35) rotate(2deg);
+  }
+  50% {
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.75);
+    transform: scale(1.4) rotate(3deg);
+  }
+}
+
+@keyframes beat-leave-weak {
+  0% {
+    transform: scale(1.35) rotate(2deg);
+    color: #fff;
+    text-shadow: 0 0 6px rgba(255, 255, 255, 0.7);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    color: var(--text-muted);
+    text-shadow: none;
+  }
+}
+
+.beat-number.weak.active {
+  animation: beat-pop-weak 0.35s ease forwards, beat-breathe-weak 1.4s ease-in-out 0.35s infinite;
+}
+
+.beat-number.weak.beat-leave {
+  animation: beat-leave-weak 0.3s ease forwards;
+}
+
+.motion-layer {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.9), transparent 60%);
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  transition: opacity 0.1s;
+}
+
+.motion-layer.on {
+  opacity: 0.45;
+}
+
+/* 音序器 */
+.sequencer {
+  position: relative;
+  display: grid;
+  grid-template-columns: 72px repeat(16, 1fr);
+  gap: 8px;
+  align-items: center;
+}
+
+.track-label {
+  font-size: 12px;
+  color: var(--text);
+  text-align: right;
+  padding: 2px 8px 2px 2px;
+  white-space: nowrap;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  font-family: inherit;
+}
+
+.track-label:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--border);
+}
+
+.track-label:active {
+  transform: scale(0.96);
+}
+
+.track-label[aria-expanded="true"] {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.channel-dropdown {
+  position: fixed;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  background: var(--panel-light);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  z-index: 100;
+  min-width: 90px;
+}
+
+.channel-option {
+  padding: 6px 10px;
+  font-size: 12px;
+  color: var(--text);
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+
+.channel-option:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.channel-option[aria-selected="true"] {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+}
+
+.pad {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  min-width: 24px;
+  background: var(--pad);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  overflow: hidden;
+  transition: background 0.1s, transform 0.06s, box-shadow 0.25s ease;
+}
+
+.pad::before {
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.pad::after {
+  transition: opacity 0.08s linear;
+}
+
+.pad:hover {
+  background: var(--pad-hover);
+}
+
+.pad:active {
+  transform: scale(0.92);
+}
+
+.pad.active {
+  background: color-mix(in srgb, var(--pad) calc((1 - var(--layer-ratio, 1)) * 100%), var(--pad-active) calc(var(--layer-ratio, 1) * 100%));
+  box-shadow: 0 0 26px 6px rgba(255, 255, 255, calc(0.32 * var(--layer-ratio, 1)));
+}
+
+/* pad 同步爆发：不放大自身光晕，通过增强 Reveal Highlight 让周围 pad 高光描边更明显 */
+.pad.accent-hit {
+  animation: pad-accent-hit var(--beat-accent-duration, 1.4s) forwards;
+}
+
+@keyframes pad-accent-hit {
+  0%, 50%, 100% {
+    box-shadow: 0 0 26px 6px rgba(255, 255, 255, calc(0.32 * var(--layer-ratio, 1)));
+  }
+}
+
+.pad.current {
+  outline: 1px solid rgba(255, 255, 255, 0.18);
+  background: var(--pad-current);
+}
+
+.pad.current.active {
+  background: color-mix(in srgb, var(--pad-current) calc((1 - var(--layer-ratio, 1)) * 100%), #fff calc(var(--layer-ratio, 1) * 100%));
+}
+
+/* 已选中的非 pad 按钮常驻保留光晕 */
+.chip.active,
+.play-btn.playing,
+.track-btn.active {
+  box-shadow: 0 0 18px 3px rgba(255, 255, 255, 0.2);
+}
+
+/* Lighting effects 关闭时：隐藏所有装饰性光晕与描边，保留背景色等功能态 */
+.app.lighting-off .pad:hover,
+.app.lighting-off .chip:hover,
+.app.lighting-off .step-btn:hover,
+.app.lighting-off .play-btn:hover,
+.app.lighting-off .panel-toggle:hover,
+.app.lighting-off .toggle:hover,
+.app.lighting-off .bank-btn:hover,
+.app.lighting-off .vol-bar:hover,
+.app.lighting-off .track-btn:hover,
+.app.lighting-off .vol-track.dragging .vol-bar {
+  box-shadow: none;
+}
+
+.app.lighting-off .pad:hover::before,
+.app.lighting-off .chip:hover::before,
+.app.lighting-off .step-btn:hover::before,
+.app.lighting-off .play-btn:hover::before,
+.app.lighting-off .panel-toggle:hover::before,
+.app.lighting-off .toggle:hover::before,
+.app.lighting-off .bank-btn:hover::before,
+.app.lighting-off .vol-bar:hover::before,
+.app.lighting-off .track-btn:hover::before,
+.app.lighting-off .vol-track.dragging .vol-bar::before,
+.app.lighting-off .vol-track.dragging .vol-bar::after,
+.app.lighting-off .pad.active,
+.app.lighting-off .chip.active,
+.app.lighting-off .play-btn.playing,
+.app.lighting-off .bank-btn.active,
+.app.lighting-off .track-btn.active {
+  box-shadow: none;
+}
+
+.app.lighting-off .play-btn.playing,
+.app.lighting-off .bank-btn.active {
+  animation: none;
+}
+
+.app.lighting-off .beat-dot.active::before {
+  box-shadow: none;
+}
+
+.app.lighting-off .beat-number.active {
+  animation: beat-pop-no-glow var(--beat-accent-duration, 1.4s) forwards;
+}
+
+@keyframes beat-pop-no-glow {
+  0% {
+    transform: scale(0.95) rotate(-1deg);
+    color: var(--text-muted);
+    text-shadow: none;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.8, 1);
+  }
+  50% {
+    transform: scale(1.95) rotate(3deg);
+    color: #fff;
+    text-shadow: none;
+    animation-timing-function: cubic-bezier(0.2, 0, 0.6, 1);
+  }
+  100% {
+    transform: scale(1.7) rotate(2deg);
+    color: #fff;
+    text-shadow: none;
+  }
+}
+
+.app.lighting-off .beat-number.weak.active {
+  animation: beat-pop-weak-no-glow 0.35s ease forwards, beat-breathe-weak-no-glow 1.4s ease-in-out 0.35s infinite;
+}
+
+@keyframes beat-pop-weak-no-glow {
+  0% {
+    transform: scale(1) rotate(0deg);
+    color: var(--text-muted);
+    text-shadow: none;
+  }
+  60% {
+    transform: scale(1.45) rotate(3deg);
+    color: #fff;
+    text-shadow: none;
+  }
+  100% {
+    transform: scale(1.35) rotate(2deg);
+    color: #fff;
+    text-shadow: none;
+  }
+}
+
+@keyframes beat-breathe-weak-no-glow {
+  0%, 100% {
+    text-shadow: none;
+    transform: scale(1.35) rotate(2deg);
+  }
+  50% {
+    text-shadow: none;
+    transform: scale(1.4) rotate(3deg);
+  }
+}
+
+/* 音序器 + 每轨音量条容器 */
+.sequencer-area {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+  width: 100%;
+  transition:
+    gap var(--fold-duration) var(--fold-easing),
+    width var(--fold-duration) var(--fold-easing);
+}
+
+.app.collapsed .display-stage {
+  width: calc(100% - 180px);
+}
+
+.app.collapsed .beat-markers {
+  width: calc(100% - 100px);
+}
+
+.app.collapsed .sequencer-area {
+  width: 100%;
+}
+
+.sequencer {
+  flex: 1;
+  min-width: 0;
+}
+
+.track-volumes {
+  position: relative;
+  display: grid;
+  grid-template-rows: repeat(8, 1fr);
+  gap: 8px;
+  width: 92px;
+  padding: 0 8px;
+  opacity: 1;
+  pointer-events: auto;
+  overflow: visible;
+}
+
+.track-mixer {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: stretch;
+  gap: 6px;
+  height: 100%;
+  min-height: 0;
+}
+
+.track-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.track-btn {
+  width: 32px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #242424;
+  color: var(--text-muted);
+  font-size: 10px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, box-shadow 0.25s ease, transform 0.1s;
+  text-align: center;
+}
+
+.track-btn:not(.active):not(:disabled):hover {
+  border-color: #444;
+  color: var(--text);
+}
+
+.track-btn:not(:disabled):active {
+  transform: scale(0.96);
+}
+
+/* M/S 按钮体积小，光效和描边相应缩小 */
+.track-btn:hover {
+  box-shadow: 0 0 14px 3px rgba(255, 255, 255, 0.18);
+}
+
+.track-btn::before,
+.track-btn::after {
+  border-width: 1px;
+}
+
+.track-btn.active {
+  background: var(--accent);
+  color: var(--panel);
+  border-color: var(--accent);
+  font-weight: 500;
+  box-shadow: 0 0 10px 2px rgba(255, 255, 255, 0.18);
+}
+
+/* 被 solo 联动禁用的 M 按钮仍保持 active 视觉 */
+.track-btn.active:disabled {
+  opacity: 1;
+  background: var(--accent);
+  color: var(--panel);
+  border-color: var(--accent);
+}
+
+/* 被 solo 排除的轨道：音量条变灰、音量显示为 0 */
+.vol-track.dimmed .vol-bar {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.vol-track.dimmed .vol-fill {
+  width: 0 !important;
+  background: rgba(255, 255, 255, 0.35);
+  box-shadow: none;
+}
+
+.vol-track.dimmed .vol-thumb {
+  left: 0% !important;
+  background: rgba(255, 255, 255, 0.35);
+  box-shadow: none;
+}
+
+.vol-track {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 18px;
+  cursor: pointer;
+  opacity: 1;
+  transform: translateX(0);
+  transition:
+    opacity 0.35s ease calc(var(--i) * 55ms),
+    transform 0.35s ease calc(var(--i) * 55ms);
+}
+
+.vol-bar {
+  width: 100%;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.35);
+  border-radius: 1.5px;
+  position: relative;
+  transition: height 0.25s ease, border-radius 0.25s ease, box-shadow 0.25s ease;
+}
+
+.vol-track:hover .vol-bar,
+.vol-track.dragging .vol-bar {
+  height: 6px;
+  border-radius: 3px;
+}
+
+.vol-track.dragging .vol-bar {
+  box-shadow: 0 0 18px 4px rgba(255, 255, 255, 0.32);
+}
+
+.vol-track.dragging .vol-bar::before,
+.vol-track.dragging .vol-bar::after {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.vol-track.dragging .vol-thumb {
+  width: 10px;
+  height: 10px;
+  margin-left: -5px;
+  margin-top: -5px;
+}
+
+.vol-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 0;
+  background: #fff;
+  border-radius: inherit;
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.3);
+  transition: width 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: calc(var(--i, 0) * 55ms + 0.12s);
+}
+
+.master-vol-track .vol-fill {
+  transition-delay: 0s;
+}
+
+.vol-track.dragging .vol-fill,
+.vol-track.dragging .vol-thumb {
+  transition: none;
+}
+
+.app:not(.collapsed) .vol-fill {
+  width: var(--level, 80%);
+}
+
+.vol-thumb {
+  position: absolute;
+  left: var(--level, 80%);
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  margin-left: -3px;
+  margin-top: -3px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.5);
+  pointer-events: none;
+  transition: left 0.45s cubic-bezier(0.22, 1, 0.36, 1), width 0.25s ease, height 0.25s ease, margin 0.25s ease;
+}
+
+.vol-track:hover .vol-thumb {
+  width: 10px;
+  height: 10px;
+  margin-left: -5px;
+  margin-top: -5px;
+}
+
+/* 右侧设置面板 */
+.settings {
+  position: relative;
+  box-sizing: border-box;
+  width: 240px;
+  min-width: 240px;
+  flex-shrink: 0;
+  z-index: 1;
+  background: var(--panel-light);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  overflow: hidden;
+  opacity: 1;
+  transform: scale(1);
+  transform-origin: center center;
+  will-change: width, opacity, transform;
+}
+
+@keyframes settings-collapse {
+  0% {
+    width: 240px;
+    min-width: 240px;
+    opacity: 1;
+    transform: scale(1);
+    border-color: var(--border);
+  }
+  45% {
+    width: 240px;
+    min-width: 240px;
+    opacity: 1;
+    transform: scale(1.05);
+    border-color: var(--border);
+  }
+  100% {
+    width: 0;
+    min-width: 0;
+    opacity: 0;
+    transform: scale(1.05);
+    border-color: transparent;
+  }
+}
+
+@keyframes settings-expand {
+  0% {
+    width: 0;
+    min-width: 0;
+    opacity: 0;
+    transform: scale(1.05);
+    border-color: transparent;
+  }
+  55% {
+    width: 240px;
+    min-width: 240px;
+    opacity: 1;
+    transform: scale(1.05);
+    border-color: var(--border);
+  }
+  100% {
+    width: 240px;
+    min-width: 240px;
+    opacity: 1;
+    transform: scale(1);
+    border-color: var(--border);
+  }
+}
+
+.app.animate-settings.collapsed .settings {
+  animation: settings-collapse 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.app.animate-settings:not(.collapsed) .settings {
+  animation: settings-expand 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.settings-inner {
+  width: 240px;
+  padding: 72px 14px 24px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 100%;
+  opacity: 1;
+  will-change: opacity;
+  transition: opacity var(--fold-duration) var(--fold-easing);
+}
+
+.app.collapsed .settings-inner {
+  opacity: 0;
+}
+
+.settings-header,
+.setting-row,
+.setting-section {
+  opacity: 0;
+  transform: translateX(18px);
+  will-change: transform, opacity;
+  transition:
+    opacity 0.35s var(--fold-easing),
+    transform 0.35s var(--fold-easing);
+}
+
+.app:not(.collapsed) .settings-header { opacity: 1; transform: translateX(0); transition-delay: 0.05s; }
+.app:not(.collapsed) .setting-row      { opacity: 1; transform: translateX(0); transition-delay: 0.12s; }
+.app:not(.collapsed) .setting-section:nth-of-type(1) { opacity: 1; transform: translateX(0); transition-delay: 0.19s; }
+.app:not(.collapsed) .setting-section:nth-of-type(2) { opacity: 1; transform: translateX(0); transition-delay: 0.26s; }
+.app:not(.collapsed) .setting-section:nth-of-type(3) { opacity: 1; transform: translateX(0); transition-delay: 0.33s; }
+.app:not(.collapsed) .setting-section:nth-of-type(4) { opacity: 1; transform: translateX(0); transition-delay: 0.40s; }
+
+.settings-header {
+  position: absolute;
+  top: 36px;
+  left: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding-left: 12px;
+  pointer-events: none;
+}
+
+.app.collapsed .settings-header {
+  top: 38px;
+}
+
+.settings-header h2 {
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 16px;
+  text-align: left;
+}
+
+.panel-toggle {
+  position: absolute;
+  top: 24px;
+  right: 252px;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--border);
+  border-radius: 0;
+  background: var(--panel-light);
+  color: var(--text-muted);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: right var(--fold-duration) var(--fold-easing),
+              background 0.15s,
+              color 0.15s,
+              border-color var(--fold-duration) var(--fold-easing),
+              box-shadow 0.25s ease,
+              transform 0.1s;
+  z-index: 20;
+}
+
+.app.collapsed .panel-toggle {
+  top: 26px;
+}
+
+.panel-toggle:hover {
+  color: var(--text);
+  background: var(--panel);
+}
+
+.app.collapsed .panel-toggle {
+  right: 12px;
+}
+
+.panel-toggle svg {
+  width: 22px;
+  height: 22px;
+  transition: transform 0.35s ease;
+}
+
+.app.collapsed .panel-toggle svg {
+  transform: rotate(180deg);
+}
+
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.toggle {
+  position: relative;
+  width: 38px;
+  height: 20px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: box-shadow 0.25s ease;
+}
+
+.toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  inset: 0;
+  background: #3a3a3a;
+  border-radius: 20px;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.toggle-slider::before {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  background: #888;
+  border-radius: 50%;
+  transition: transform 0.2s, background 0.2s;
+}
+
+.toggle input:checked + .toggle-slider {
+  background: #2a2a2a;
+}
+
+.toggle input:checked + .toggle-slider::before {
+  transform: translateX(18px);
+  background: var(--accent);
+}
+
+.setting-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.section-label {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.bpm-control {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.bpm-control .step-btn {
+  width: 40px;
+  height: 40px;
+  font-size: 22px;
+}
+
+.bpm-control .bpm-value {
+  font-size: 28px;
+  font-weight: 600;
+  width: 68px;
+  text-align: center;
+}
+
+.step-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: #242424;
+  color: var(--text);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s, box-shadow 0.25s ease, transform 0.1s;
+}
+
+.step-btn:hover {
+  background: #2f2f2f;
+}
+
+.bpm-value {
+  font-size: 22px;
+  font-weight: 600;
+  width: 52px;
+  text-align: center;
+}
+
+.chip-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.chip {
+  padding: 6px 2px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #242424;
+  color: var(--text-muted);
+  font-size: 10px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, box-shadow 0.25s ease, transform 0.1s;
+  text-align: center;
+}
+
+.chip:hover {
+  border-color: #444;
+  color: var(--text);
+}
+
+.chip.active {
+  background: var(--accent);
+  color: var(--panel);
+  border-color: var(--accent);
+  font-weight: 500;
+}
+
+.chip-add {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.smart-drums-section {
+  display: none;
+}
+
+.random-btn {
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #242424;
+  color: var(--text);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.random-btn:hover {
+  background: #2f2f2f;
+}
+
+/* Smart Drums 随机鼓垫 */
+.smart-drums {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sd-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sd-power,
+.sd-dice {
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #242424;
+  color: var(--text-muted);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, transform 0.1s;
+}
+
+.sd-power:hover,
+.sd-dice:hover {
+  background: #2f2f2f;
+  color: var(--text);
+}
+
+.sd-power:active,
+.sd-dice:active {
+  transform: scale(0.96);
+}
+
+.sd-power.active {
+  color: #00e676;
+  border-color: rgba(0, 230, 118, 0.4);
+}
+
+.sd-pad {
+  position: relative;
+  flex: 1;
+  aspect-ratio: 1 / 1;
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at 25% 20%, rgba(224, 64, 251, 0.28), transparent 45%),
+    radial-gradient(circle at 80% 75%, rgba(68, 138, 255, 0.24), transparent 45%),
+    #1a1220;
+  box-shadow:
+    inset 0 0 40px rgba(0, 0, 0, 0.6),
+    0 6px 18px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+  cursor: crosshair;
+  transition: opacity 0.2s;
+}
+
+.sd-pad.off {
+  opacity: 0.45;
+}
+
+.sd-axis {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.08);
+  pointer-events: none;
+}
+
+.sd-axis-x {
+  top: 50%;
+  left: 8%;
+  right: 8%;
+  height: 1px;
+}
+
+.sd-axis-y {
+  left: 50%;
+  top: 8%;
+  bottom: 8%;
+  width: 1px;
+}
+
+.sd-label {
+  position: absolute;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.55);
+  font-weight: 500;
+  pointer-events: none;
+}
+
+.sd-top {
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.sd-bottom {
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.sd-left {
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%) rotate(-90deg);
+  transform-origin: center;
+}
+
+.sd-right {
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%) rotate(90deg);
+  transform-origin: center;
+}
+
+.sd-dot {
+  position: absolute;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 9px;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+  background: var(--sd-color);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  box-shadow:
+    0 0 16px var(--sd-color),
+    inset 0 0 10px rgba(255, 255, 255, 0.2);
+  transform: translate(-50%, -50%);
+  cursor: grab;
+  user-select: none;
+  transition: transform 0.12s, box-shadow 0.12s;
+  z-index: 2;
+}
+
+.sd-dot.dragging {
+  cursor: grabbing;
+  transform: translate(-50%, -50%) scale(1.12);
+  z-index: 10;
+}
+
+

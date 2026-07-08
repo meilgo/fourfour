@@ -1,0 +1,40 @@
+/////////////////////////////////////////////////////////////////////////////
+// sfz definition file
+// copyright Chicken Systems, Inc.
+// -------------------------------------------------------------------------
+// Application: Translator 6 6.1, Build 3
+// Vendor: 
+
+
+<region> sample=..\..\WAV\Heavy Sat Kit\BD 808 Mid Color B 01.wav lokey=60 hikey=60 end=48707 pitch_keycenter=60 bend_up=200 bend_down=-200 volume=-6 amp_veltrack=40.944881 ampeg_release=20 pitchlfo_freq=0.1 
+
+<region> sample=..\..\WAV\Heavy Sat Kit\BD 808 Sat Mid Decay B 03.wav lokey=62 hikey=62 end=37249 pitch_keycenter=62 bend_up=200 bend_down=-200 volume=-6 amp_veltrack=40.944881 ampeg_release=20 pitchlfo_freq=0.1 
+
+<region> sample=..\..\WAV\Heavy Sat Kit\BD 808 Smooth C 05.wav lokey=64 hikey=64 end=240718 pitch_keycenter=64 bend_up=200 bend_down=-200 volume=-6 amp_veltrack=40.944881 ampeg_release=20 pitchlfo_freq=0.1 
+
+<region> sample=..\..\WAV\Heavy Sat Kit\BD 808 Smooth C 09.wav lokey=65 hikey=65 end=313092 pitch_keycenter=65 bend_up=200 bend_down=-200 volume=-6 amp_veltrack=40.944881 ampeg_release=20 pitchlfo_freq=0.1 
+
+<region> sample=..\..\WAV\Heavy Sat Kit\CH 808 Color A 04.wav lokey=66 hikey=66 end=22327 pitch_keycenter=66 bend_up=200 bend_down=-200 volume=-6 amp_veltrack=40.944881 ampeg_release=20 pitchlfo_freq=0.1 
+
+<region> sample=..\..\WAV\Heavy Sat Kit\CH 808 Color A 06.wav lokey=70 hikey=70 end=8887 pitch_keycenter=70 bend_up=200 bend_down=-200 volume=-6 amp_veltrack=40.944881 ampeg_release=20 pitchlfo_freq=0.1 
+
+<region> sample=..\..\WAV\Heavy Sat Kit\Clap 808 Sat B 03.wav lokey=72 hikey=72 end=65239 pitch_keycenter=72 bend_up=200 bend_down=-200 volume=-6 amp_veltrack=40.944881 ampeg_release=20 pitchlfo_freq=0.1 
+
+<region> sample=..\..\WAV\Heavy Sat Kit\Cym A 808 Sat Decay B 02.wav lokey=75 hikey=75 end=219053 pitch_keycenter=75 bend_up=200 bend_down=-200 volume=-6 amp_veltrack=40.944881 ampeg_release=20 pitchlfo_freq=0.1 
+
+<region> sample=..\..\WAV\Heavy Sat Kit\Maracas 808 Color 13.wav lokey=71 hikey=71 end=5604 pitch_keycenter=71 bend_up=200 bend_down=-200 volume=-6 amp_veltrack=40.944881 ampeg_release=20 pitchlfo_freq=0.1 
+
+<region> sample=..\..\WAV\Heavy Sat Kit\OH 808 Sat A 02.wav lokey=68 hikey=68 end=37438 pitch_keycenter=68 bend_up=200 bend_down=-200 volume=-6 amp_veltrack=40.944881 ampeg_release=20 pitchlfo_freq=0.1 
+
+<region> sample=..\..\WAV\Heavy Sat Kit\OH 808 Sat A 06.wav lokey=73 hikey=73 end=36008 pitch_keycenter=73 bend_up=200 bend_down=-200 volume=-6 amp_veltrack=40.944881 ampeg_release=20 pitchlfo_freq=0.1 
+
+<region> sample=..\..\WAV\Heavy Sat Kit\Rim Shot 808 Dark 03.wav lokey=74 hikey=74 end=5016 pitch_keycenter=74 bend_up=200 bend_down=-200 volume=-6 amp_veltrack=40.944881 ampeg_release=20 pitchlfo_freq=0.1 
+
+<region> sample=..\..\WAV\Heavy Sat Kit\SD 808 Classic 06.wav lokey=63 hikey=63 end=7300 pitch_keycenter=63 bend_up=200 bend_down=-200 volume=-6 amp_veltrack=40.944881 ampeg_release=20 pitchlfo_freq=0.1 
+
+<region> sample=..\..\WAV\Heavy Sat Kit\SD 808 MPC60 Snap.wav lokey=61 hikey=61 end=10869 pitch_keycenter=61 bend_up=200 bend_down=-200 volume=-6 amp_veltrack=40.944881 ampeg_release=20 pitchlfo_freq=0.1 
+
+<region> sample=..\..\WAV\Heavy Sat Kit\Tom Mid 808 Sat A 05.wav lokey=67 hikey=67 end=23110 pitch_keycenter=67 bend_up=200 bend_down=-200 volume=-6 amp_veltrack=40.944881 ampeg_release=20 pitchlfo_freq=0.1 
+
+<region> sample=..\..\WAV\Heavy Sat Kit\Tom Mid 808 Sat B 09.wav lokey=69 hikey=69 end=27930 pitch_keycenter=69 bend_up=200 bend_down=-200 volume=-6 amp_veltrack=40.944881 ampeg_release=20 pitchlfo_freq=0.1 
+
