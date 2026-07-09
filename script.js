@@ -39,6 +39,7 @@ const trackVolumesContainer = document.getElementById("trackVolumes");
 
 let pads = [];
 let isPlaying = false;
+let isLoadingAudio = false;
 let currentStep = 0;
 let bpm = 110;
 let timer = null;
@@ -302,8 +303,15 @@ function applyPatternAllBanks(name) {
   buildBeatMarkers();
 }
 
+function setAudioLoading(loading) {
+  isLoadingAudio = loading;
+  playBtn.classList.toggle("loading", loading);
+  playBtn.disabled = loading;
+}
+
 async function ensureAudio() {
   if (loadPromise) return loadPromise;
+  setAudioLoading(true);
   loadPromise = (async () => {
     if (!audioCtx) {
       audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -313,6 +321,11 @@ async function ensureAudio() {
     }
     await loadSamples();
   })();
+  try {
+    await loadPromise;
+  } finally {
+    setAudioLoading(false);
+  }
   return loadPromise;
 }
 
@@ -912,8 +925,9 @@ function tick() {
 }
 
 async function start() {
-  if (isPlaying) return;
+  if (isPlaying || isLoadingAudio) return;
   await ensureAudio();
+  if (isPlaying || isLoadingAudio) return;
   isPlaying = true;
   playBtn.classList.add("playing");
   appEl.classList.add("is-playing");
@@ -951,6 +965,7 @@ function schedule() {
 }
 
 playBtn.addEventListener("click", () => {
+  if (isLoadingAudio) return;
   if (isPlaying) stop();
   else start();
 });
