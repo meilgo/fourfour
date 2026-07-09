@@ -461,16 +461,32 @@ body {
   color: var(--panel);
 }
 
-.play-btn .pause-icon {
+.play-btn .pause-icon,
+.play-btn .loading-icon {
   display: none;
 }
 
-.play-btn.playing .play-icon {
+.play-btn.playing .play-icon,
+.play-btn.loading .play-icon,
+.play-btn.loading .pause-icon {
   display: none;
 }
 
 .play-btn.playing .pause-icon {
   display: block;
+}
+
+.play-btn.loading .loading-icon {
+  display: block;
+  animation: spin 1s linear infinite;
+}
+
+.play-btn.loading {
+  cursor: wait;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 /* 播放按钮播放态：呼吸光晕 */
