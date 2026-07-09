@@ -316,37 +316,35 @@ async function ensureAudio() {
   return loadPromise;
 }
 
+async function loadChannelBuffers(channel) {
+  const key = channel.key;
+  const urls = channel.samples;
+  if (!urls || sampleBuffers[key]) return;
+
+  const urlList = Array.isArray(urls) ? urls : [urls];
+  sampleBuffers[key] = [];
+  const jobs = urlList.map((url, i) =>
+    (async () => {
+      try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const arr = await res.arrayBuffer();
+        sampleBuffers[key][i] = await audioCtx.decodeAudioData(arr);
+      } catch (err) {
+        console.warn("加载采样失败:", key, url, err);
+      }
+    })()
+  );
+
+  await Promise.all(jobs);
+}
+
 async function loadSamples() {
   sampleBuffers = {};
-  const kit = kits[currentKit];
   const jobs = [];
-
-  function loadBuffer(key, urls) {
-    const urlList = Array.isArray(urls) ? urls : [urls];
-    sampleBuffers[key] = [];
-    urlList.forEach((url, i) => {
-      jobs.push(
-        (async () => {
-          try {
-            const res = await fetch(url);
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const arr = await res.arrayBuffer();
-            sampleBuffers[key][i] = await audioCtx.decodeAudioData(arr);
-          } catch (err) {
-            console.warn("加载采样失败:", key, url, err);
-          }
-        })()
-      );
-    });
+  for (let rowIdx = 0; rowIdx < instruments.length; rowIdx++) {
+    jobs.push(loadChannelBuffers(getActiveChannel(rowIdx)));
   }
-
-  Object.entries(kit.samples).forEach(([name, urls]) => loadBuffer(name, urls));
-
-  const channelMap = kit.channels ?? {};
-  Object.values(channelMap).forEach((channels) => {
-    channels.forEach((channel) => loadBuffer(channel.key, channel.samples));
-  });
-
   await Promise.all(jobs);
 }
 
@@ -546,6 +544,8 @@ async function selectChannel(rowIdx, channelKey) {
   await ensureAudio();
 
   const channel = getActiveChannel(rowIdx);
+  await loadChannelBuffers(channel);
+
   const newMaxLayer = Math.max(1, Array.isArray(channel.samples) ? channel.samples.length : 1);
 
   // 截断当前所有 bank 中该行的层数，避免超出新通道最大层
