@@ -507,13 +507,6 @@ body {
   transition: opacity 0.7s ease;
 }
 
-/* 从头播放按钮：在第一格内右对齐，与轨道标签右边缘对齐 */
-.restart-btn {
-  justify-self: end;
-  align-self: center;
-  margin-left: 0;
-}
-
 .volume-control {
   display: flex;
   align-items: center;
@@ -735,16 +728,19 @@ body {
   justify-items: center;
   width: calc(100% - 100px);
   margin-top: 8px;
+  container-type: inline-size;
 }
 
 .beat-spacer {
   grid-column: 1;
 }
 
-/* 拍号标记：40×40 圆形可点击区，与播放按钮大小一致 */
+/* 拍号标记：最大 40×40 圆形可点击区，与播放按钮大小一致；
+   窗口缩窄时随网格单元等比缩小，避免溢出或重叠 */
 .beat-marker {
-  width: 40px;
-  height: 40px;
+  width: min(40px, 100%);
+  aspect-ratio: 1 / 1;
+  max-width: 100%;
   border-radius: 50%;
   display: grid;
   place-items: center;
@@ -754,7 +750,7 @@ body {
 
 .beat-number {
   text-align: center;
-  font-size: 14px;
+  font-size: clamp(10px, 1.9cqi, 14px);
   font-weight: 600;
   color: var(--text-muted);
 }
@@ -771,8 +767,8 @@ body {
 
 .beat-dot::before {
   content: "";
-  width: 5px;
-  height: 5px;
+  width: clamp(3px, 0.68cqi, 5px);
+  height: clamp(3px, 0.68cqi, 5px);
   border-radius: 50%;
   background: #666;
   transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
@@ -847,15 +843,17 @@ body {
 }
 
 .accent-title {
-  position: absolute;
-  left: calc(100% + 54px);
-  top: calc(50% - 3px);
-  transform: translate(-50%, -50%);
-  font-size: 22px;
+  grid-column: 1;
+  justify-self: end;
+  align-self: center;
+  font-size: 16px;
   font-weight: 700;
   color: var(--text);
+  text-align: right;
+  padding: 2px 8px 2px 2px;
   white-space: nowrap;
   pointer-events: none;
+  transform: translateY(-2px);
 }
 
 .beat-number.accent-number {
@@ -905,6 +903,24 @@ body {
     transform: scale(1.7) rotate(2deg);
     color: #fff;
     text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    color: var(--text-muted);
+    text-shadow: none;
+  }
+}
+
+/* 关闭光效时重音数字离开动画，保留缩放但无光晕 */
+.beat-number.beat-leave-no-glow {
+  animation: beat-leave-no-glow 0.35s ease forwards;
+}
+
+@keyframes beat-leave-no-glow {
+  0% {
+    transform: scale(1.7) rotate(2deg);
+    color: #fff;
+    text-shadow: none;
   }
   100% {
     transform: scale(1) rotate(0deg);
@@ -1084,6 +1100,11 @@ body {
   animation: pad-accent-hit var(--beat-accent-duration, 1.4s) forwards;
 }
 
+.app.lighting-off .pad.accent-hit {
+  animation: none;
+  box-shadow: none;
+}
+
 @keyframes pad-accent-hit {
   0%, 50%, 100% {
     box-shadow: 0 0 26px 6px rgba(255, 255, 255, calc(0.32 * var(--layer-ratio, 1)));
@@ -1146,6 +1167,13 @@ body {
 
 .app.lighting-off .beat-dot.active::before {
   box-shadow: none;
+}
+
+.app.lighting-off .beat-dot:hover::before,
+.app.lighting-off .beat-number:hover,
+.app.lighting-off .beat-number.accent-number:hover {
+  box-shadow: none;
+  text-shadow: none;
 }
 
 .app.lighting-off .beat-number.active {

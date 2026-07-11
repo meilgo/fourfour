@@ -60,34 +60,34 @@ const kits = {
     labels: ["Sidestick", "Ride", "Crash", "Hi-Hat", "Rack Tom", "Floor Tom", "Snare", "Kick"],
     samples: {
       Kick: [
-        "samples/Modern%20Funk%20Kit%20One%20Shots/24%20Bit%20WAV%20Files/20%20Inch%20Kick4.wav",
-        "samples/Modern%20Funk%20Kit%20One%20Shots/24%20Bit%20WAV%20Files/20%20Inch%20Kick%20Dampened3.wav",
+        "samples/Acoustic/20%20Inch%20Kick4.wav",
+        "samples/Acoustic/20%20Inch%20Kick%20Dampened3.wav",
       ],
       Snare: [
-        "samples/Modern%20Funk%20Kit%20One%20Shots/24%20Bit%20WAV%20Files/SLP%20Aluminium%20Snare3.wav",
-        "samples/Modern%20Funk%20Kit%20One%20Shots/24%20Bit%20WAV%20Files/SLP%20Aluminium%20Tuned%20Down%20Snare3.wav",
-        "samples/Modern%20Funk%20Kit%20One%20Shots/24%20Bit%20WAV%20Files/SLP%20Aluminium%20Tuned%20Up%20Snare3.wav",
+        "samples/Acoustic/SLP%20Aluminium%20Snare3.wav",
+        "samples/Acoustic/SLP%20Aluminium%20Tuned%20Down%20Snare3.wav",
+        "samples/Acoustic/SLP%20Aluminium%20Tuned%20Up%20Snare3.wav",
       ],
       "Tom Hi": [
-        "samples/Modern%20Funk%20Kit%20One%20Shots/24%20Bit%20WAV%20Files/Floor%20Tom%2016%20Inch4.wav",
+        "samples/Acoustic/Floor%20Tom%2016%20Inch4.wav",
       ],
       Rim: [
-        "samples/Modern%20Funk%20Kit%20One%20Shots/24%20Bit%20WAV%20Files/Rack%20Tom2.wav",
+        "samples/Acoustic/Rack%20Tom2.wav",
       ],
       "Hi-Hat": [
-        "samples/Modern%20Funk%20Kit%20One%20Shots/24%20Bit%20WAV%20Files/Prototype%20Dry%20Hihat%20Closed3.wav",
-        "samples/Modern%20Funk%20Kit%20One%20Shots/24%20Bit%20WAV%20Files/Flat%20Hats%2014%20Inch%20Open5.wav",
-        "samples/Modern%20Funk%20Kit%20One%20Shots/24%20Bit%20WAV%20Files/Flat%20Hats%2014%20Inch%20Half%20Open3.wav",
+        "samples/Acoustic/Prototype%20Dry%20Hihat%20Closed3.wav",
+        "samples/Acoustic/Flat%20Hats%2014%20Inch%20Open5.wav",
+        "samples/Acoustic/Flat%20Hats%2014%20Inch%20Half%20Open3.wav",
       ],
       Crash: [
-        "samples/Modern%20Funk%20Kit%20One%20Shots/24%20Bit%20WAV%20Files/HHXtreme%20Crash%2019%20Inch4.wav",
+        "samples/Acoustic/HHXtreme%20Crash%2019%20Inch4.wav",
       ],
       Ride: [
-        "samples/Modern%20Funk%20Kit%20One%20Shots/24%20Bit%20WAV%20Files/Artisan%20Lite%20Ride%2022%20Inch3.wav",
+        "samples/Acoustic/Artisan%20Lite%20Ride%2022%20Inch3.wav",
       ],
       Perc: [
-        "samples/Modern%20Funk%20Kit%20One%20Shots/24%20Bit%20WAV%20Files/Birch%20Snare%2012%20Inch%20Sidestick3.wav",
-        "samples/Modern%20Funk%20Kit%20One%20Shots/24%20Bit%20WAV%20Files/Radioking%20Snare%20Sidestick3.wav",
+        "samples/Acoustic/Birch%20Snare%2012%20Inch%20Sidestick3.wav",
+        "samples/Acoustic/Radioking%20Snare%20Sidestick3.wav",
       ],
     },
   },
@@ -95,59 +95,59 @@ const kits = {
     labels: ["Perc", "Crash", "Ride", "Hi-Hat", "Rim", "Tom Hi", "Snare", "Kick"],
     samples: {
       Kick: [
-        "samples/Free%20Vinyl%20Drums%20From%20Mars/WAV/01.%20Future%20Retro%20Kit/BD%20Clean%20Vinyl%2007.wav",
-        "samples/Free%20Vinyl%20Drums%20From%20Mars/WAV/01.%20Future%20Retro%20Kit/BD%20Clean%20Vinyl%2011.wav",
+        "samples/Vinyl/BD%20Clean%20Vinyl%2007.wav",
+        "samples/Vinyl/BD%20Clean%20Vinyl%2011.wav",
       ],
-      Snare: ["samples/Free%20Vinyl%20Drums%20From%20Mars/WAV/01.%20Future%20Retro%20Kit/SD%20Degraded%20Vinyl%2006.wav"],
+      Snare: ["samples/Vinyl/SD%20Degraded%20Vinyl%2006.wav"],
       "Hi-Hat": [
-        "samples/Free%20Vinyl%20Drums%20From%20Mars/WAV/01.%20Future%20Retro%20Kit/CH%20Color%20Hi%20Vinyl%2003.wav",
-        "samples/Free%20Vinyl%20Drums%20From%20Mars/WAV/01.%20Future%20Retro%20Kit/CH%20Color%20Vinyl%2003.wav",
-        "samples/Free%20Vinyl%20Drums%20From%20Mars/WAV/01.%20Future%20Retro%20Kit/CH%20Color%20Vinyl%2008.wav",
+        "samples/Vinyl/CH%20Color%20Hi%20Vinyl%2003.wav",
+        "samples/Vinyl/CH%20Color%20Vinyl%2003.wav",
+        "samples/Vinyl/CH%20Color%20Vinyl%2008.wav",
       ],
-      "Tom Hi": ["samples/Free%20Vinyl%20Drums%20From%20Mars/WAV/01.%20Future%20Retro%20Kit/Tom%20Silky%20Vinyl%2002.wav"],
-      Rim: ["samples/Free%20Vinyl%20Drums%20From%20Mars/WAV/01.%20Future%20Retro%20Kit/Rim%20Tube%20Vinyl%2003.wav"],
-      Perc: ["samples/Free%20Vinyl%20Drums%20From%20Mars/WAV/01.%20Future%20Retro%20Kit/Shaker%20Hard%20Vinyl.wav"],
-      Ride: ["samples/Free%20Vinyl%20Drums%20From%20Mars/WAV/01.%20Future%20Retro%20Kit/Ride%20FX%20Phaser%20Vinyl%2003.wav"],
-      Crash: ["samples/Free%20Vinyl%20Drums%20From%20Mars/WAV/01.%20Future%20Retro%20Kit/Crash%20FX%20Wobble%20Vinyl%2001.wav"],
+      "Tom Hi": ["samples/Vinyl/Tom%20Silky%20Vinyl%2002.wav"],
+      Rim: ["samples/Vinyl/Rim%20Tube%20Vinyl%2003.wav"],
+      Perc: ["samples/Vinyl/Shaker%20Hard%20Vinyl.wav"],
+      Ride: ["samples/Vinyl/Ride%20FX%20Phaser%20Vinyl%2003.wav"],
+      Crash: ["samples/Vinyl/Crash%20FX%20Wobble%20Vinyl%2001.wav"],
     },
   },
   "808": {
     labels: ["Clap", "Crash", "Cowbell", "Hi-Hat", "Rim", "Tom", "Snare", "Kick"],
     samples: {
       Kick: [
-        "samples/Free%20808%20From%20Mars/WAV/Cleancut%20Kit/BD%20808%20Mid%20Color%20A%2005.wav",
-        "samples/Free%20808%20From%20Mars/WAV/Cleancut%20Kit/BD%20808%20Sat%20Click%20Decay%20B%2002.wav",
-        "samples/Free%20808%20From%20Mars/WAV/Cleancut%20Kit/BD%20808%20Noise%2001.wav",
+        "samples/808/BD%20808%20Mid%20Color%20A%2005.wav",
+        "samples/808/BD%20808%20Sat%20Click%20Decay%20B%2002.wav",
+        "samples/808/BD%20808%20Noise%2001.wav",
       ],
       Snare: [
-        "samples/Free%20808%20From%20Mars/WAV/Cleancut%20Kit/SD%20B%20808%20Tape%20Tone%20C%2006.wav",
-        "samples/Free%20808%20From%20Mars/WAV/Cleancut%20Kit/SD%20808%20Crisp%20B%2002.wav",
+        "samples/808/SD%20B%20808%20Tape%20Tone%20C%2006.wav",
+        "samples/808/SD%20808%20Crisp%20B%2002.wav",
       ],
       "Hi-Hat": [
-        "samples/Free%20808%20From%20Mars/WAV/Cleancut%20Kit/CH%20A%20808%20Tape.wav",
-        "samples/Free%20808%20From%20Mars/WAV/Cleancut%20Kit/OH%20808%20Tape%20Decay%2002.wav",
-        "samples/Free%20808%20From%20Mars/WAV/Heavy%20Sat%20Kit/OH%20808%20Sat%20A%2002.wav",
+        "samples/808/CH%20A%20808%20Tape.wav",
+        "samples/808/OH%20808%20Tape%20Decay%2002.wav",
+        "samples/808/OH%20808%20Sat%20A%2002.wav",
       ],
       "Tom Hi": [
-        "samples/Free%20808%20From%20Mars/WAV/Cleancut%20Kit/Tom%20Low%20A%20808%2003.wav",
-        "samples/Free%20808%20From%20Mars/WAV/Cleancut%20Kit/Tom%20Mid%20A%20808%2008.wav",
-        "samples/Free%20808%20From%20Mars/WAV/Cleancut%20Kit/Tom%20Hi%20A%20808%2008.wav",
+        "samples/808/Tom%20Low%20A%20808%2003.wav",
+        "samples/808/Tom%20Mid%20A%20808%2008.wav",
+        "samples/808/Tom%20Hi%20A%20808%2008.wav",
       ],
-      Rim: ["samples/Free%20808%20From%20Mars/WAV/Cleancut%20Kit/Rim%20Shot%20A%20808%20Tape.wav"],
+      Rim: ["samples/808/Rim%20Shot%20A%20808%20Tape.wav"],
       Perc: [
-        "samples/Free%20808%20From%20Mars/WAV/Cleancut%20Kit/Clap%20808%20Color%2003.wav",
-        "samples/Free%20808%20From%20Mars/WAV/Cleancut%20Kit/Clap%20A%20808.wav",
+        "samples/808/Clap%20808%20Color%2003.wav",
+        "samples/808/Clap%20A%20808.wav",
       ],
-      Ride: ["samples/Free%20808%20From%20Mars/WAV/Cleancut%20Kit/Cowbell%20808%20Color%20Short%2003.wav"],
-      Crash: ["samples/Free%20808%20From%20Mars/WAV/Cleancut%20Kit/Cym%20A%20808%20Tape%20Decay%20C%2001.wav"],
+      Ride: ["samples/808/Cowbell%20808%20Color%20Short%2003.wav"],
+      Crash: ["samples/808/Cym%20A%20808%20Tape%20Decay%20C%2001.wav"],
     },
     channels: {
       4: [
-        { key: "Rim", label: "Rim", samples: ["samples/Free%20808%20From%20Mars/WAV/Cleancut%20Kit/Rim%20Shot%20A%20808%20Tape.wav"] },
+        { key: "Rim", label: "Rim", samples: ["samples/808/Rim%20Shot%20A%20808%20Tape.wav"] },
         { key: "Conga", label: "Conga", samples: [
-          "TR808%20Drum%20Kit/LC50.WAV",
-          "TR808%20Drum%20Kit/MC50.WAV",
-          "TR808%20Drum%20Kit/HC50.WAV",
+          "samples/808/LC50.WAV",
+          "samples/808/MC50.WAV",
+          "samples/808/HC50.WAV",
         ]},
       ],
     },
@@ -209,6 +209,7 @@ const patternChannels = {
 
 // 节奏预设中的重音标记位置
 const patternAccents = {
+  Rock: [0, 4, 8, 12],
   Techno: [0, 4, 8, 12],
 };
 
@@ -780,9 +781,7 @@ function getBeatConfig() {
 }
 
 function buildBeatMarkers() {
-  const restartBtn = beatMarkers.querySelector("#restartBtn");
   beatMarkers.innerHTML = "";
-  if (restartBtn) beatMarkers.appendChild(restartBtn);
 
   const accentTitle = document.createElement("div");
   accentTitle.className = "accent-title";
@@ -864,13 +863,15 @@ function updateBeatMarkers(step) {
 
       if (shouldActive) {
         marker.classList.add("active");
-        marker.classList.remove("beat-leave");
+        marker.classList.remove("beat-leave", "beat-leave-no-glow");
       } else if (marker.classList.contains("active")) {
         marker.classList.remove("active");
-        marker.classList.add("beat-leave");
+        marker.classList.remove("beat-leave", "beat-leave-no-glow");
+        const leaveClass = lightingEnabled ? "beat-leave" : "beat-leave-no-glow";
+        marker.classList.add(leaveClass);
         const onEnd = (e) => {
-          if (e.animationName === "beat-leave") {
-            marker.classList.remove("beat-leave");
+          if (e.animationName === leaveClass) {
+            marker.classList.remove(leaveClass);
             marker.removeEventListener("animationend", onEnd);
           }
         };
@@ -889,6 +890,7 @@ function pulseMotion() {
 }
 
 function triggerAccentPadHit(step) {
+  if (!lightingEnabled) return;
   if (!accentSteps.includes(step)) return;
   const duration = (0.5 * 60000) / bpm;
   const toAnimate = [];
@@ -1818,6 +1820,8 @@ buildBeatMarkers();
 setupTimeSignature();
 highlightStep(currentStep);
 updatePlayhead();
-applyPattern(currentRhythm);
+applyPatternAllBanks(currentRhythm);
+syncDomToBank();
+updateVisualization();
 setVolume(volume);
 setBpm(bpm);
