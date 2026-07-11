@@ -154,6 +154,29 @@ const kits = {
   },
 };
 
+const SAMPLE_BASE = "https://fourfour-samples-1333371641.cos.ap-guangzhou.myqcloud.com";
+
+function prefixSamples() {
+  Object.values(kits).forEach((kit) => {
+    Object.keys(kit.samples).forEach((key) => {
+      const urls = kit.samples[key];
+      kit.samples[key] = (Array.isArray(urls) ? urls : [urls]).map(
+        (url) => `${SAMPLE_BASE}/${url}`
+      );
+    });
+    Object.values(kit.channels || {}).forEach((channelList) => {
+      channelList.forEach((channel) => {
+        const urls = channel.samples;
+        channel.samples = (Array.isArray(urls) ? urls : [urls]).map(
+          (url) => `${SAMPLE_BASE}/${url}`
+        );
+      });
+    });
+  });
+}
+
+prefixSamples();
+
 let audioCtx = null;
 let sampleBuffers = {};
 let loadPromise = null;
