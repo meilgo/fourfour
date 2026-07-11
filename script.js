@@ -1329,7 +1329,7 @@ function buildRevealGradient(sources, baseAlpha = 0) {
   const hasSources = sources.length > 0;
   if (!hasSources && baseAlpha <= 0) return { gradient: conicGrad(0), maxIntensity: 0 };
 
-  const steps = isTouchDevice ? 12 : 24;
+  const steps = 24;
   const stepDeg = 360 / steps;
   const samples = [];
   let maxSourceI = 0;
@@ -1349,7 +1349,7 @@ function buildRevealGradient(sources, baseAlpha = 0) {
     maxSourceI = Math.max(maxSourceI, sourceIntensity);
   }
 
-  const peakAlpha = isTouchDevice ? 0.75 : 0.95;
+  const peakAlpha = 0.95;
   const stops = [];
   for (let i = 0; i <= steps; i++) {
     const idx = i % steps;
@@ -1366,7 +1366,7 @@ function buildRevealGradient(sources, baseAlpha = 0) {
 
 // 为细长条音量条构建线性渐变高光：受光点跟随光源在条上的水平投影，像聚光灯一样左右平滑移动
 function buildVolBarGradient(sources, baseAlpha = 0, width = 100) {
-  const peakAlpha = isTouchDevice ? 0.75 : 0.95;
+  const peakAlpha = 0.95;
 
   if (!sources.length) {
     if (baseAlpha <= 0) {
@@ -1382,7 +1382,7 @@ function buildVolBarGradient(sources, baseAlpha = 0, width = 100) {
   }
 
   const halfW = Math.max(1, width / 2);
-  const samples = isTouchDevice ? 8 : 16;
+  const samples = 16;
   const profile = new Array(samples).fill(0);
   let maxI = 0;
 
@@ -1445,7 +1445,6 @@ function updateRevealHighlights() {
     }
 
     // 已选中按钮：所有非自身按钮都作为高光源（包括 pad，效果迁移到 pad 网格）
-    const touchDistMul = isTouchDevice ? 0.6 : 1;
     selectedCenters.forEach((center) => {
       if (center.el === item.el) return;
       const dx = center.cx - item.cx;
@@ -1454,8 +1453,8 @@ function updateRevealHighlights() {
       // M/S 按钮体积小，对周围按钮的高光影响范围和强度都更小
       // pad 按当前 layer 比例缩放高光影响范围和强度
       const ratio = center.layerRatio ?? 1;
-      const sourceMaxDist = (center.isSmallBtn ? maxDist * 0.5 : maxDist) * ratio * touchDistMul;
-      const weightMul = (center.isSmallBtn ? 0.5 : 1) * ratio * (isTouchDevice ? 0.7 : 1);
+      const sourceMaxDist = (center.isSmallBtn ? maxDist * 0.5 : maxDist) * ratio;
+      const weightMul = (center.isSmallBtn ? 0.5 : 1) * ratio;
       if (dist < sourceMaxDist && dist > 0) {
         const w = Math.max(0, 1 - dist / sourceMaxDist) * weightMul;
         const angle = Math.atan2(dy, dx);
