@@ -5,13 +5,19 @@
   --text: #f0f0f0;
   --text-muted: #9a9a9a;
   --border: #2f2f2f;
-  --pad: #4a4a4a;
-  --pad-hover: #5c5c5c;
+  --pad: #2f2f2f;
+  --pad-hover: #404040;
   --pad-active: #e0e0e0;
-  --pad-current: #2a2a2a;
+  --pad-current: #1a1a1a;
   --accent: #ffffff;
   --display: #d9d9d9;
   --shadow: rgba(0, 0, 0, 0.35);
+  --pad-layer-1: #e8e8e8;
+  --pad-layer-2: #d8e0e8;
+  --pad-layer-3: #f0e8d8;
+  --pad-glow-1: rgba(255, 255, 255, 0.32);
+  --pad-glow-2: rgba(180, 225, 255, 0.35);
+  --pad-glow-3: rgba(255, 210, 150, 0.35);
 }
 
 * {
@@ -34,6 +40,20 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans SC", sans-serif;
   color: var(--text);
   padding: 24px;
+  touch-action: manipulation;
+}
+
+.pad,
+.play-btn,
+.bank-btn,
+.chip,
+.step-btn,
+.panel-toggle,
+.track-label,
+.volume-icon-btn,
+.sd-power,
+.sd-dice {
+  touch-action: none;
 }
 
 :root {
@@ -184,8 +204,14 @@ body {
   gap: 18px;
 }
 
-.bank-tabs {
+.top-controls-right {
+  display: flex;
+  align-items: center;
+  gap: 18px;
   margin-left: auto;
+}
+
+.bank-tabs {
   margin-right: 100px;
 }
 
@@ -489,14 +515,21 @@ body {
   to { transform: rotate(360deg); }
 }
 
-/* 播放按钮播放态：呼吸光晕 */
-@keyframes play-breathe {
-  0%, 100% { box-shadow: 0 0 16px 3px rgba(255, 255, 255, 0.28); }
-  50% { box-shadow: 0 0 32px 9px rgba(255, 255, 255, 0.48); }
+/* 播放按钮播放态：呼吸光晕（opacity 动画，避免 box-shadow 插值） */
+.play-btn.playing {
+  animation: none;
+  box-shadow: 0 0 16px 3px rgba(255, 255, 255, 0.28);
 }
 
-.play-btn.playing {
-  animation: play-breathe 1.6s ease-in-out infinite;
+.play-btn.playing::before {
+  background: none;
+  border: none;
+  -webkit-mask: none;
+  mask: none;
+  opacity: 0;
+  transform: scale(1);
+  box-shadow: 0 0 32px 9px rgba(255, 255, 255, 0.48);
+  animation: play-breathe-opacity 1.6s ease-in-out infinite;
 }
 
 .play-btn::before {
@@ -649,20 +682,23 @@ body {
   border-color: #444;
 }
 
-@keyframes bank-breathe {
-  0%, 100% {
-    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.15);
-  }
-  50% {
-    box-shadow: 0 0 10px 2px rgba(255, 255, 255, 0.35);
-  }
-}
-
 .bank-btn.active {
   color: #fff;
   border-color: rgba(255, 255, 255, 0.55);
-  animation: bank-breathe 2.2s ease-in-out infinite;
+  animation: none;
+  box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.15);
   overflow: visible;
+}
+
+.bank-btn.active::before {
+  background: none;
+  border: none;
+  -webkit-mask: none;
+  mask: none;
+  opacity: 0;
+  transform: scale(1);
+  box-shadow: 0 0 10px 2px rgba(255, 255, 255, 0.35);
+  animation: bank-breathe-opacity 2.2s ease-in-out infinite;
 }
 
 .bank-btn::before {
@@ -696,10 +732,13 @@ body {
 }
 
 .viz-bar {
-  height: 6%;
+  height: 100%;
   background: rgba(0, 0, 0, 0.35);
   border-radius: 3px 3px 0 0;
-  transition: height 0.1s ease-out;
+  transform-origin: bottom;
+  transform: scaleY(var(--viz-scale, 0.06));
+  transition: transform 0.1s ease-out;
+  will-change: transform;
 }
 
 .playhead-bar {
@@ -1001,25 +1040,28 @@ body {
   grid-template-columns: 72px repeat(16, 1fr);
   gap: 8px;
   align-items: center;
+  contain: layout style;
 }
 
 .track-label {
   font-size: 12px;
   color: var(--text);
   text-align: right;
-  padding: 2px 8px 2px 2px;
+  padding: 8px 8px 8px 2px;
   white-space: nowrap;
   background: transparent;
   border: 1px solid transparent;
   border-radius: 4px;
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  transition: background 0.15s, border-color 0.15s, color 0.15s, opacity 0.15s;
   font-family: inherit;
 }
 
 .track-label:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: var(--border);
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  text-shadow: 0 0 6px rgba(255, 255, 255, 0.35), 0 0 12px rgba(255, 255, 255, 0.18);
 }
 
 .track-label:active {
@@ -1027,37 +1069,127 @@ body {
 }
 
 .track-label[aria-expanded="true"] {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.35);
+  opacity: 0;
+  background: transparent;
+  border-color: transparent;
 }
 
-.channel-dropdown {
+/* Channel selector morph dropdown */
+.channel-morph {
   position: fixed;
-  margin: 0;
-  padding: 4px;
-  list-style: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   background: var(--panel-light);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  border: 1px solid transparent;
+  overflow: hidden;
   z-index: 100;
-  min-width: 90px;
+  transition:
+    width 350ms cubic-bezier(0.34, 1.25, 0.64, 1),
+    height 350ms cubic-bezier(0.34, 1.25, 0.64, 1),
+    top 350ms cubic-bezier(0.34, 1.25, 0.64, 1),
+    left 350ms cubic-bezier(0.34, 1.25, 0.64, 1),
+    border-radius 350ms cubic-bezier(0.34, 1.25, 0.64, 1),
+    border-color 200ms ease,
+    box-shadow 200ms ease;
 }
 
-.channel-option {
-  padding: 6px 10px;
+.channel-morph > :not(.morph-menu),
+.channel-morph > :not(.morph-menu) * {
+  --h-opacity: 0 !important;
+}
+
+.channel-morph[data-open="true"] {
+  border-color: var(--border);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+.app:not(.lighting-off) .channel-morph[data-open="true"] {
+  border-color: rgba(255, 255, 255, 0.55);
+  box-shadow:
+    0 0 34px 8px rgba(255, 255, 255, 0.22),
+    0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+.morph-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 8px;
   font-size: 12px;
   color: var(--text);
-  border-radius: 5px;
+  white-space: nowrap;
+  opacity: 1;
+  filter: blur(0);
+  pointer-events: none;
+  transition: opacity 150ms ease, filter 150ms ease;
+}
+
+.channel-morph[data-open="true"] .morph-label {
+  opacity: 0;
+  filter: blur(2px);
+}
+
+.morph-menu {
+  position: absolute;
+  inset: 0;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  border-radius: 8px;
+  opacity: 0;
+  transform: translateX(20px) scale(0.97);
+  filter: blur(2px);
+  pointer-events: none;
+  transition:
+    opacity 200ms ease,
+    transform 350ms cubic-bezier(0.22, 1, 0.36, 1),
+    filter 200ms ease;
+}
+
+.morph-menu::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 2px;
+  background: var(--h-grad);
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: var(--h-opacity, 0);
+  transition: opacity 0.18s ease;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.channel-morph[data-open="true"] .morph-menu {
+  opacity: 1;
+  transform: translateX(0) scale(1);
+  filter: blur(0);
+  pointer-events: auto;
+}
+
+.morph-option {
+  padding: 10px;
+  font-size: 12px;
+  line-height: 12px;
+  color: var(--text);
+  border-radius: 4px;
   cursor: pointer;
   transition: background 0.12s, color 0.12s;
 }
 
-.channel-option:hover {
+.morph-option:hover {
   background: rgba(255, 255, 255, 0.12);
 }
 
-.channel-option[aria-selected="true"] {
+.morph-option[aria-selected="true"] {
   background: rgba(255, 255, 255, 0.18);
   color: #fff;
 }
@@ -1090,25 +1222,24 @@ body {
   transform: scale(0.92);
 }
 
+/* Pad layer indicator: hidden by default, only shown in KEYLIGHT */
+.pad-layer-marker {
+  display: none;
+}
+
 .pad.active {
-  background: color-mix(in srgb, var(--pad) calc((1 - var(--layer-ratio, 1)) * 100%), var(--pad-active) calc(var(--layer-ratio, 1) * 100%));
+  background: var(--pad-active);
   box-shadow: 0 0 26px 6px rgba(255, 255, 255, calc(0.32 * var(--layer-ratio, 1)));
 }
 
-/* pad 同步爆发：不放大自身光晕，通过增强 Reveal Highlight 让周围 pad 高光描边更明显 */
-.pad.accent-hit {
-  animation: pad-accent-hit var(--beat-accent-duration, 1.4s) forwards;
-}
-
-.app.lighting-off .pad.accent-hit {
-  animation: none;
-  box-shadow: none;
-}
-
-@keyframes pad-accent-hit {
-  0%, 50%, 100% {
-    box-shadow: 0 0 26px 6px rgba(255, 255, 255, calc(0.32 * var(--layer-ratio, 1)));
-  }
+/* Accent burst glow is rendered on a single canvas overlay instead of per-pad DOM shadows */
+.glow-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 3;
 }
 
 .pad.current {
@@ -1117,7 +1248,7 @@ body {
 }
 
 .pad.current.active {
-  background: color-mix(in srgb, var(--pad-current) calc((1 - var(--layer-ratio, 1)) * 100%), #fff calc(var(--layer-ratio, 1) * 100%));
+  background: var(--pad-current);
 }
 
 /* 已选中的非 pad 按钮常驻保留光晕 */
@@ -1125,6 +1256,138 @@ body {
 .play-btn.playing,
 .track-btn.active {
   box-shadow: 0 0 18px 3px rgba(255, 255, 255, 0.2);
+}
+
+/* KEYLIGHT: 硬件键盘背光风，内敛顶部高光 + 内部微光 */
+.app[data-lighting-scheme="keylight"] {
+  --keylight-edge: rgba(255, 255, 255, 0.42);
+  --keylight-core: rgba(255, 255, 255, 0.10);
+  --keylight-active: rgba(255, 255, 255, 0.18);
+}
+
+/* 禁用 Reveal Highlight 伪元素 */
+.app[data-lighting-scheme="keylight"] .pad::before,
+.app[data-lighting-scheme="keylight"] .chip::before,
+.app[data-lighting-scheme="keylight"] .step-btn::before,
+.app[data-lighting-scheme="keylight"] .play-btn::before,
+.app[data-lighting-scheme="keylight"] .panel-toggle::before,
+.app[data-lighting-scheme="keylight"] .toggle::before,
+.app[data-lighting-scheme="keylight"] .bank-btn::before,
+.app[data-lighting-scheme="keylight"] .vol-bar::before,
+.app[data-lighting-scheme="keylight"] .track-btn::before,
+.app[data-lighting-scheme="keylight"] .pad::after,
+.app[data-lighting-scheme="keylight"] .chip::after,
+.app[data-lighting-scheme="keylight"] .step-btn::after,
+.app[data-lighting-scheme="keylight"] .play-btn::after,
+.app[data-lighting-scheme="keylight"] .panel-toggle::after,
+.app[data-lighting-scheme="keylight"] .toggle::after,
+.app[data-lighting-scheme="keylight"] .bank-btn::after,
+.app[data-lighting-scheme="keylight"] .vol-bar::after,
+.app[data-lighting-scheme="keylight"] .track-btn::after {
+  display: none;
+}
+
+/* Hover: 内敛顶部高光 + 内部微光 */
+.app[data-lighting-scheme="keylight"] .pad:hover,
+.app[data-lighting-scheme="keylight"] .chip:hover,
+.app[data-lighting-scheme="keylight"] .step-btn:hover,
+.app[data-lighting-scheme="keylight"] .play-btn:hover,
+.app[data-lighting-scheme="keylight"] .panel-toggle:hover,
+.app[data-lighting-scheme="keylight"] .bank-btn:hover,
+.app[data-lighting-scheme="keylight"] .vol-bar:hover,
+.app[data-lighting-scheme="keylight"] .track-btn:hover {
+  box-shadow: inset 0 1px 0 var(--keylight-edge), inset 0 0 14px var(--keylight-core);
+}
+
+/* Active/selected：更强的内部光 + 极小外轮廓 */
+.app[data-lighting-scheme="keylight"] .chip.active,
+.app[data-lighting-scheme="keylight"] .play-btn.playing,
+.app[data-lighting-scheme="keylight"] .bank-btn.active,
+.app[data-lighting-scheme="keylight"] .track-btn.active {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), inset 0 0 18px var(--keylight-active), 0 0 8px rgba(255, 255, 255, 0.08);
+}
+
+/* KEYLIGHT: hide pad layer markers */
+.app[data-lighting-scheme="keylight"] .pad-layer-marker {
+  display: none !important;
+}
+
+/* Pad active：用 inset glow 替代外发光，按层使用色温 */
+.app[data-lighting-scheme="keylight"] .pad.active {
+  background: var(--pad-active);
+  box-shadow: inset 0 0 20px var(--keylight-active), inset 0 1px 0 var(--keylight-edge);
+}
+
+.app[data-lighting-scheme="keylight"] .pad.active.layer-1 { background: var(--pad-layer-1); box-shadow: inset 0 0 20px var(--pad-glow-1), inset 0 1px 0 var(--keylight-edge); }
+.app[data-lighting-scheme="keylight"] .pad.active.layer-2 { background: var(--pad-layer-2); box-shadow: inset 0 0 20px var(--pad-glow-2), inset 0 1px 0 var(--keylight-edge); }
+.app[data-lighting-scheme="keylight"] .pad.active.layer-3 { background: var(--pad-layer-3); box-shadow: inset 0 0 20px var(--pad-glow-3), inset 0 1px 0 var(--keylight-edge); }
+
+.app[data-lighting-scheme="keylight"] .pad.active.layer-1 .pad-layer-marker { color: var(--pad-layer-1); }
+.app[data-lighting-scheme="keylight"] .pad.active.layer-2 .pad-layer-marker { color: var(--pad-layer-2); }
+.app[data-lighting-scheme="keylight"] .pad.active.layer-3 .pad-layer-marker { color: var(--pad-layer-3); }
+
+.app[data-lighting-scheme="keylight"] .pad.current {
+  outline: 1px solid rgba(255, 255, 255, 0.22);
+}
+
+.app[data-lighting-scheme="keylight"] .pad.current.active.layer-1 { background: var(--pad-layer-1); }
+.app[data-lighting-scheme="keylight"] .pad.current.active.layer-2 { background: var(--pad-layer-2); }
+.app[data-lighting-scheme="keylight"] .pad.current.active.layer-3 { background: var(--pad-layer-3); }
+
+/* 拍号：更克制的 hover/active */
+.app[data-lighting-scheme="keylight"] .beat-number:hover,
+.app[data-lighting-scheme="keylight"] .beat-number.accent-number:hover {
+  text-shadow: none;
+  color: #fff;
+}
+
+.app[data-lighting-scheme="keylight"] .beat-dot.active::before {
+  box-shadow: inset 0 0 4px 1px rgba(255, 255, 255, 0.9);
+}
+
+.app[data-lighting-scheme="keylight"] .beat-dot:hover::before {
+  box-shadow: inset 0 0 3px 1px rgba(255, 255, 255, 0.7);
+}
+
+/* 拍号 active：保留缩放但去除 text-shadow 光晕 */
+.app[data-lighting-scheme="keylight"] .beat-number.active {
+  animation: beat-pop-no-glow var(--beat-accent-duration, 1.4s) forwards;
+}
+
+.app[data-lighting-scheme="keylight"] .beat-number.weak.active {
+  animation: beat-pop-weak-no-glow 0.35s ease forwards, beat-breathe-weak-no-glow 1.4s ease-in-out 0.35s infinite;
+}
+
+.app[data-lighting-scheme="keylight"] .beat-number.beat-leave {
+  animation: beat-leave-no-glow 0.35s ease forwards;
+}
+
+.app[data-lighting-scheme="keylight"] .beat-number.weak.beat-leave {
+  animation: beat-leave-weak-no-glow 0.3s ease forwards;
+}
+
+/* 音量条：拖拽时内部光 */
+.app[data-lighting-scheme="keylight"] .vol-track.dragging .vol-bar {
+  box-shadow: inset 0 0 12px var(--keylight-active), inset 0 1px 0 var(--keylight-edge);
+}
+
+.app[data-lighting-scheme="keylight"] .vol-fill {
+  box-shadow: 0 0 4px rgba(255, 255, 255, 0.25);
+}
+
+.app[data-lighting-scheme="keylight"] .vol-thumb {
+  box-shadow: 0 0 4px rgba(255, 255, 255, 0.4);
+}
+
+/* 移除呼吸动画 */
+.app[data-lighting-scheme="keylight"] .play-btn.playing,
+.app[data-lighting-scheme="keylight"] .bank-btn.active {
+  animation: none;
+}
+
+/* Motion layer 在 KEYLIGHT 下隐藏 */
+.app[data-lighting-scheme="keylight"] .motion-layer {
+  display: none;
 }
 
 /* Lighting effects 关闭时：隐藏所有装饰性光晕与描边，保留背景色等功能态 */
@@ -1174,6 +1437,10 @@ body {
 .app.lighting-off .beat-number.accent-number:hover {
   box-shadow: none;
   text-shadow: none;
+}
+
+.app.lighting-off .pad-layer-marker {
+  display: none !important;
 }
 
 .app.lighting-off .beat-number.active {
@@ -1686,6 +1953,21 @@ body {
   gap: 8px;
 }
 
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.section-header .section-label {
+  margin: 0;
+  flex: 1;
+}
+
+.section-header .toggle {
+  flex-shrink: 0;
+}
+
 .section-label {
   font-size: 12px;
   color: var(--text-muted);
@@ -1935,5 +2217,390 @@ body {
   z-index: 10;
 }
 
+/* ---------- 移动端性能分级光效：tier-minimal / tier-reduced / tier-full ---------- */
+
+/* ===== tier-minimal：低端设备，最简效果 ===== */
+
+/* 静态光晕：移动端禁用持续呼吸动画，避免合成器过载 */
+.app[data-lighting-scheme="aura"].tier-minimal .play-btn.playing {
+  animation: none;
+  box-shadow: 0 0 10px 2px rgba(255, 255, 255, 0.22);
+}
+
+.app[data-lighting-scheme="aura"].tier-minimal .play-btn.playing::before {
+  display: none;
+}
+
+.app[data-lighting-scheme="aura"].tier-minimal .bank-btn.active {
+  animation: none;
+  box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.app[data-lighting-scheme="aura"].tier-minimal .bank-btn.active::before {
+  display: none;
+}
+
+/* 共享呼吸动画 keyframes（桌面 AURA tier-full 使用） */
+@keyframes play-breathe-opacity {
+  0%, 100% { opacity: 0; }
+  50% { opacity: 1; }
+}
+
+@keyframes bank-breathe-opacity {
+  0%, 100% { opacity: 0; }
+  50% { opacity: 1; }
+}
+
+.app[data-lighting-scheme="aura"].tier-minimal .play-btn:hover,
+.app[data-lighting-scheme="aura"].tier-minimal .bank-btn:hover {
+  box-shadow: none;
+}
+
+.app[data-lighting-scheme="aura"].tier-minimal .pad.active {
+  background: var(--pad-active);
+  box-shadow: 0 0 10px 2px rgba(255, 255, 255, calc(0.25 * var(--layer-ratio, 1)));
+}
+
+.app[data-lighting-scheme="aura"].tier-minimal .pad.current.active {
+  background: var(--pad-active);
+  box-shadow: 0 0 12px 3px rgba(255, 255, 255, calc(0.28 * var(--layer-ratio, 1)));
+}
+
+.app[data-lighting-scheme="aura"].tier-minimal .chip.active,
+.app[data-lighting-scheme="aura"].tier-minimal .track-btn.active {
+  box-shadow: 0 0 10px 2px rgba(255, 255, 255, 0.15);
+}
+
+.app[data-lighting-scheme="aura"].tier-minimal .beat-dot.active::before {
+  box-shadow: 0 0 4px 0.5px rgba(255, 255, 255, 0.6);
+}
+
+.app[data-lighting-scheme="aura"].tier-minimal .motion-layer {
+  display: none;
+}
+
+.app[data-lighting-scheme="aura"].tier-minimal .pad::after,
+.app[data-lighting-scheme="aura"].tier-minimal .chip::after,
+.app[data-lighting-scheme="aura"].tier-minimal .step-btn::after,
+.app[data-lighting-scheme="aura"].tier-minimal .play-btn::after,
+.app[data-lighting-scheme="aura"].tier-minimal .panel-toggle::after,
+.app[data-lighting-scheme="aura"].tier-minimal .toggle::after,
+.app[data-lighting-scheme="aura"].tier-minimal .bank-btn::after,
+.app[data-lighting-scheme="aura"].tier-minimal .vol-bar::after,
+.app[data-lighting-scheme="aura"].tier-minimal .track-btn::after {
+  display: none;
+}
+
+.app[data-lighting-scheme="aura"].tier-minimal .beat-number:hover,
+.app[data-lighting-scheme="aura"].tier-minimal .beat-number.accent-number:hover {
+  text-shadow: 0 0 4px rgba(255, 255, 255, 0.6);
+}
+
+.app[data-lighting-scheme="aura"].tier-minimal .pad::before,
+.app[data-lighting-scheme="aura"].tier-minimal .chip::before,
+.app[data-lighting-scheme="aura"].tier-minimal .step-btn::before,
+.app[data-lighting-scheme="aura"].tier-minimal .play-btn::before,
+.app[data-lighting-scheme="aura"].tier-minimal .panel-toggle::before,
+.app[data-lighting-scheme="aura"].tier-minimal .toggle::before,
+.app[data-lighting-scheme="aura"].tier-minimal .bank-btn::before,
+.app[data-lighting-scheme="aura"].tier-minimal .vol-bar::before,
+.app[data-lighting-scheme="aura"].tier-minimal .track-btn::before {
+  display: none;
+}
+
+/* ===== tier-reduced：中端设备，恢复桌面视觉但保持 GPU 友好 ===== */
+
+.app[data-lighting-scheme="aura"].tier-reduced .play-btn.playing {
+  animation: none;
+  box-shadow: 0 0 16px 3px rgba(255, 255, 255, 0.28);
+}
+
+.app[data-lighting-scheme="aura"].tier-reduced .play-btn.playing::before {
+  display: none;
+}
+
+.app[data-lighting-scheme="aura"].tier-reduced .bank-btn.active {
+  animation: none;
+  box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.15);
+  overflow: visible;
+}
+
+.app[data-lighting-scheme="aura"].tier-reduced .bank-btn.active::before {
+  display: none;
+}
+
+.app[data-lighting-scheme="aura"].tier-reduced .play-btn:hover,
+.app[data-lighting-scheme="aura"].tier-reduced .bank-btn:hover {
+  box-shadow: none;
+}
+
+.app[data-lighting-scheme="aura"].tier-reduced .pad.active {
+  background: var(--pad-active);
+  box-shadow: 0 0 18px 4px rgba(255, 255, 255, calc(0.28 * var(--layer-ratio, 1)));
+}
+
+.app[data-lighting-scheme="aura"].tier-reduced .pad.current.active {
+  background: var(--pad-active);
+  box-shadow: 0 0 22px 5px rgba(255, 255, 255, calc(0.32 * var(--layer-ratio, 1)));
+}
+
+.app[data-lighting-scheme="aura"].tier-reduced .chip.active,
+.app[data-lighting-scheme="aura"].tier-reduced .track-btn.active {
+  box-shadow: 0 0 18px 3px rgba(255, 255, 255, 0.2);
+}
+
+.app[data-lighting-scheme="aura"].tier-reduced .beat-dot.active::before {
+  box-shadow: 0 0 6px 1px rgba(255, 255, 255, 0.75);
+}
+
+.app[data-lighting-scheme="aura"].tier-reduced .motion-layer {
+  display: block;
+  mix-blend-mode: normal;
+  opacity: 0;
+}
+
+.app[data-lighting-scheme="aura"].tier-reduced .motion-layer.on {
+  opacity: 0.35;
+}
+
+.app[data-lighting-scheme="aura"].tier-reduced .beat-number:hover,
+.app[data-lighting-scheme="aura"].tier-reduced .beat-number.accent-number:hover {
+  text-shadow: 0 0 6px rgba(255, 255, 255, 0.7);
+}
+
+/* reduced 保留 ::after 用于 Reveal Highlight 静态描边，但禁用 hover 描边 */
+.app[data-lighting-scheme="aura"].tier-reduced .pad::before,
+.app[data-lighting-scheme="aura"].tier-reduced .chip::before,
+.app[data-lighting-scheme="aura"].tier-reduced .step-btn::before,
+.app[data-lighting-scheme="aura"].tier-reduced .play-btn::before,
+.app[data-lighting-scheme="aura"].tier-reduced .panel-toggle::before,
+.app[data-lighting-scheme="aura"].tier-reduced .toggle::before,
+.app[data-lighting-scheme="aura"].tier-reduced .bank-btn::before,
+.app[data-lighting-scheme="aura"].tier-reduced .vol-bar::before,
+.app[data-lighting-scheme="aura"].tier-reduced .track-btn::before {
+  display: none;
+}
+
+/* ===== tier-full：高端设备 / 桌面，完整动态光效 ===== */
+
+.tier-full .pad,
+.tier-full .beat-number.active,
+.tier-full .playhead-bar,
+.tier-full .viz-bar {
+  will-change: transform;
+}
+
+/* Contain paint/layout for display-stage on all tiers.
+   sequencer and beat-markers are excluded because accent glows / .time-sig
+   extend beyond their boundaries and would be clipped by contain:paint. */
+.display-stage {
+  contain: layout style paint;
+}
+
+
+/* KEYLIGHT 在最低端设备上的进一步降级：仅保留静态 active 微光，移除 hover 光效 */
+.app[data-lighting-scheme="keylight"].tier-minimal .pad:hover,
+.app[data-lighting-scheme="keylight"].tier-minimal .chip:hover,
+.app[data-lighting-scheme="keylight"].tier-minimal .step-btn:hover,
+.app[data-lighting-scheme="keylight"].tier-minimal .play-btn:hover,
+.app[data-lighting-scheme="keylight"].tier-minimal .panel-toggle:hover,
+.app[data-lighting-scheme="keylight"].tier-minimal .bank-btn:hover,
+.app[data-lighting-scheme="keylight"].tier-minimal .vol-bar:hover,
+.app[data-lighting-scheme="keylight"].tier-minimal .track-btn:hover {
+  box-shadow: none;
+}
+
+.app[data-lighting-scheme="keylight"].tier-minimal .chip.active,
+.app[data-lighting-scheme="keylight"].tier-minimal .play-btn.playing,
+.app[data-lighting-scheme="keylight"].tier-minimal .bank-btn.active,
+.app[data-lighting-scheme="keylight"].tier-minimal .track-btn.active {
+  box-shadow: inset 0 0 10px var(--keylight-active);
+}
+
+.app[data-lighting-scheme="keylight"].tier-minimal .pad.active {
+  background: var(--pad-active);
+  box-shadow: inset 0 0 10px var(--keylight-active);
+}
+
+.app[data-lighting-scheme="keylight"].tier-minimal .pad.active.layer-1 { background: var(--pad-layer-1); box-shadow: inset 0 0 10px var(--pad-glow-1); }
+.app[data-lighting-scheme="keylight"].tier-minimal .pad.active.layer-2 { background: var(--pad-layer-2); box-shadow: inset 0 0 10px var(--pad-glow-2); }
+.app[data-lighting-scheme="keylight"].tier-minimal .pad.active.layer-3 { background: var(--pad-layer-3); box-shadow: inset 0 0 10px var(--pad-glow-3); }
+
+.app[data-lighting-scheme="keylight"].tier-minimal .pad.active.layer-1 .pad-layer-marker { color: var(--pad-layer-1); }
+.app[data-lighting-scheme="keylight"].tier-minimal .pad.active.layer-2 .pad-layer-marker { color: var(--pad-layer-2); }
+.app[data-lighting-scheme="keylight"].tier-minimal .pad.active.layer-3 .pad-layer-marker { color: var(--pad-layer-3); }
+
+.app[data-lighting-scheme="keylight"].tier-minimal .beat-dot.active::before,
+.app[data-lighting-scheme="keylight"].tier-minimal .beat-dot:hover::before {
+  box-shadow: none;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+/* ===== 录制按钮 / 计时器 ===== */
+.play-btn.record-btn .stop-icon {
+  display: none;
+}
+
+.play-btn.record-btn.recording .record-icon {
+  display: none;
+}
+
+.play-btn.record-btn.recording .stop-icon {
+  display: block;
+}
+
+.play-btn.record-btn.recording {
+  background: #ff4d4f;
+  color: #fff;
+  box-shadow: 0 0 16px 3px rgba(255, 77, 79, 0.35);
+}
+
+.play-btn.record-btn.recording::before,
+.play-btn.record-btn.recording::after {
+  border-color: transparent;
+}
+
+.record-timer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 76px;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  user-select: none;
+}
+
+/* ===== Number pop-in (Transitions.dev) ===== */
+:root {
+  --digit-dur: 500ms;
+  --digit-distance: 8px;
+  --digit-stagger: 70ms;
+  --digit-blur: 2px;
+  --digit-ease: cubic-bezier(0.34, 1.45, 0.64, 1);
+  --digit-dir-x: 0;
+  --digit-dir-y: 1;
+}
+
+@keyframes t-digit-pop-in {
+  0% {
+    transform: translate(
+      calc(var(--digit-distance) * var(--digit-dir-x)),
+      calc(var(--digit-distance) * var(--digit-dir-y))
+    );
+    opacity: 0;
+    filter: blur(var(--digit-blur));
+  }
+  100% { transform: translate(0, 0); opacity: 1; filter: blur(0); }
+}
+
+.t-digit-group {
+  display: inline-flex;
+  align-items: baseline;
+}
+
+.t-digit {
+  display: inline-block;
+  will-change: transform, opacity, filter;
+}
+
+.t-digit-group.is-animating .t-digit {
+  animation: t-digit-pop-in var(--digit-dur) var(--digit-ease) both;
+}
+
+.t-digit-group.is-animating .t-digit[data-stagger="1"] {
+  animation-delay: var(--digit-stagger);
+}
+
+.t-digit-group.is-animating .t-digit[data-stagger="2"] {
+  animation-delay: calc(var(--digit-stagger) * 2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-digit-group .t-digit { animation: none !important; }
+}
+
+/* ===== 清空确认弹窗 ===== */
+.confirm-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.confirm-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.confirm-modal-panel {
+  position: relative;
+  background: var(--panel-light);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 24px;
+  width: 320px;
+  max-width: 90vw;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+  color: var(--text);
+}
+
+.confirm-modal-panel h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.confirm-modal-panel p {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.confirm-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.confirm-modal-btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--panel-light);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.confirm-modal-btn:active {
+  transform: scale(0.96);
+}
+
+.confirm-modal-btn.confirm {
+  background: #ff4d4f;
+  border-color: #ff4d4f;
+  color: #fff;
+}
+
+.confirm-modal-btn.confirm:hover {
+  background: #ff6b6d;
+}
+
+.confirm-modal-btn.cancel:hover {
+  background: #252525;
+}
 
 

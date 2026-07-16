@@ -9,9 +9,16 @@ let bankStates = Array.from({ length: BANKS }, () =>
 );
 
 const sequencer = document.getElementById("sequencer");
+const glowCanvas = document.getElementById("glowCanvas");
 const bankTabs = document.getElementById("bankTabs");
 const playBtn = document.getElementById("playBtn");
 const clearBtn = document.getElementById("clearBtn");
+const recordBtn = document.getElementById("recordBtn");
+const recordTimer = document.getElementById("recordTimer");
+const recordTimerDigits = document.getElementById("recordTimerDigits");
+const clearConfirmModal = document.getElementById("clearConfirmModal");
+const confirmClearBtn = document.getElementById("confirmClearBtn");
+const cancelClearBtn = document.getElementById("cancelClearBtn");
 const restartBtn = document.getElementById("restartBtn");
 const bpmValue = document.getElementById("bpmValue");
 const bpmMinus = document.getElementById("bpmMinus");
@@ -21,44 +28,85 @@ const topBpmMinus = document.getElementById("topBpmMinus");
 const topBpmPlus = document.getElementById("topBpmPlus");
 const topBpm = document.getElementById("topBpm");
 const playheadBar = document.getElementById("playheadBar");
-const motionToggle = document.getElementById("motionToggle");
+const schemeSelector = document.getElementById("schemeSelector");
+const lightingToggle = document.getElementById("lightingToggle");
 const motionLayer = document.getElementById("motionLayer");
 const vizGrid = document.getElementById("vizGrid");
 const sdPad = document.getElementById("sdPad");
 const sdPower = document.getElementById("sdPower");
 const sdDice = document.getElementById("sdDice");
 const appEl = document.querySelector(".app");
-const isTouchDevice = window.matchMedia("(pointer: coarse)").matches;
-if (isTouchDevice && appEl) appEl.classList.add("touch-optimized");
+const pointerCoarse = window.matchMedia("(pointer: coarse)").matches;
+const memory = navigator.deviceMemory || 4;
+const cores = navigator.hardwareConcurrency || 4;
+const dpr = window.devicePixelRatio || 1;
+let lightingTier = "full";
+if (pointerCoarse) {
+  // Mobile devices keep static highlights only (no sustained RAF, no accent flash)
+  // to avoid frame drops on iOS WebKit. Reveal strokes are computed once on click.
+  if (memory >= 4 && cores >= 4) lightingTier = "reduced";
+  else lightingTier = "minimal";
+}
 const panelToggle = document.getElementById("panelToggle");
 const volumeSlider = document.getElementById("volumeSlider");
 const volumeIconBtn = document.getElementById("volumeIconBtn");
 const volumeControl = document.getElementById("volumeControl");
 let beatNumbers = document.querySelectorAll(".beat-number");
 let beatDots = document.querySelectorAll(".beat-dot");
+let beatMarkerEls = [];
 const beatMarkers = document.getElementById("beatMarkers");
 const trackVolumesContainer = document.getElementById("trackVolumes");
 
 let pads = [];
 let isPlaying = false;
 let isLoadingAudio = false;
+let isRecording = false;
+let recordStartTime = 0;
+let recordRaf = null;
+let lastRecordSeconds = -1;
 let currentStep = 0;
 let bpm = 110;
 let timer = null;
-let lightingEnabled = true;
+const SCHEMES = ['off', 'aura', 'keylight'];
+let lightingScheme = pointerCoarse ? 'keylight' : 'aura';
+let lightingEnabled = lightingScheme !== 'off';
+let schemeBeforeOff = lightingScheme;
+if (appEl) {
+  appEl.classList.add(`tier-${lightingTier}`);
+  appEl.setAttribute('data-lighting-scheme', lightingScheme);
+  appEl.classList.toggle('lighting-off', !lightingEnabled);
+}
 let volume = 0.8;
 let isMuted = false;
 let volumeBeforeMute = 0.8;
 let settleTimeout = null;
 let timeSignature = { top: 4, bottom: 4 };
 let accentSteps = [];
+let accentHitTimer = null;
+let glowCtx = null;
+let glowRaf = null;
+let glowPadRects = [];
+let glowScale = 1;
+var trackLabels = [];
+let accentGlowActive = false;
 const trackVolumes = Array(instruments.length).fill(0.8);
 const mutedTracks = Array(instruments.length).fill(false);
 const soloTracks = Array(instruments.length).fill(false);
-let kitChannelAssignments = {}; // { kitName: { rowIdx: channelKey } }
+let kitChannelAssignments = {}; // { kitName: { bankIdx: { rowIdx: channelKey } } }
 
 const kits = {
   Acoustic: {
+    masterGain: 0.95,
+    channelGains: {
+      Kick: 0.9,
+      Snare: 0.75,
+      "Tom Hi": 1,
+      Rim: 1,
+      "Hi-Hat": 1.05,
+      Crash: 0.95,
+      Ride: 0.95,
+      Perc: 1,
+    },
     labels: ["Sidestick", "Ride", "Crash", "Hi-Hat", "Rack Tom", "Floor Tom", "Snare", "Kick"],
     samples: {
       Kick: [
@@ -94,6 +142,17 @@ const kits = {
     },
   },
   Vinyl: {
+    masterGain: 0.88,
+    channelGains: {
+      Kick: 0.95,
+      Snare: 0.9,
+      "Tom Hi": 1,
+      Rim: 1,
+      "Hi-Hat": 1,
+      Crash: 0.95,
+      Ride: 0.95,
+      Perc: 1.05,
+    },
     labels: ["Perc", "Crash", "Ride", "Hi-Hat", "Rim", "Tom Hi", "Snare", "Kick"],
     samples: {
       Kick: [
@@ -114,6 +173,17 @@ const kits = {
     },
   },
   "808": {
+    masterGain: 0.85,
+    channelGains: {
+      Kick: 0.92,
+      Snare: 0.88,
+      "Tom Hi": 1,
+      Rim: 1,
+      "Hi-Hat": 1,
+      Crash: 0.95,
+      Ride: 0.95,
+      Perc: 0.95,
+    },
     labels: ["Clap", "Crash", "Cowbell", "Hi-Hat", "Rim", "Tom", "Snare", "Kick"],
     samples: {
       Kick: [
@@ -156,7 +226,24 @@ const kits = {
   },
 };
 
-const SAMPLE_BASE = "https://fourfour-samples-1333371641.cos.ap-guangzhou.myqcloud.com";
+const isLocalhost = (() => {
+  const host = location.hostname;
+  return (
+    host === "localhost" ||
+    host === "127.0.0.1" ||
+    host === "0.0.0.0" ||
+    host === "::1" ||
+    host.endsWith(".local") ||
+    /^192\.168\./.test(host) ||
+    /^10\./.test(host) ||
+    /^172\.(1[6-9]|2\d|3[01])\./.test(host) ||
+    location.protocol === "file:"
+  );
+})();
+
+const SAMPLE_BASE = isLocalhost
+  ? ""
+  : "https://fourfour-samples-1333371641.cos.ap-guangzhou.myqcloud.com";
 
 function prefixSamples() {
   Object.values(kits).forEach((kit) => {
@@ -180,8 +267,12 @@ function prefixSamples() {
 prefixSamples();
 
 let audioCtx = null;
+let masterOut = null;
 let sampleBuffers = {};
 let loadPromise = null;
+let scriptProcessor = null;
+let recordedBuffersL = [];
+let recordedBuffersR = [];
 
 // 8 轨：按音高/重要性从下到上为 Kick, Snare, Tom Hi, Rim, Hi-Hat, Ride, Crash, Perc
 const patterns = {
@@ -279,6 +370,9 @@ function syncDomToBank() {
       updatePadVisuals(pad, bankStates[currentBank][rowIdx][col], maxLayer);
     });
   });
+  trackLabels.forEach((label, rowIdx) => {
+    if (label) label.textContent = getActiveChannel(rowIdx).label;
+  });
   refreshSelectedCenters();
   scheduleRevealUpdate();
 }
@@ -342,6 +436,10 @@ async function ensureAudio() {
     if (!audioCtx) {
       audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     }
+    if (!masterOut) {
+      masterOut = audioCtx.createGain();
+      masterOut.connect(audioCtx.destination);
+    }
     if (audioCtx.state === "suspended") {
       await audioCtx.resume();
     }
@@ -379,7 +477,6 @@ async function loadChannelBuffers(channel) {
 }
 
 async function loadSamples() {
-  sampleBuffers = {};
   const jobs = [];
   for (let rowIdx = 0; rowIdx < instruments.length; rowIdx++) {
     jobs.push(loadChannelBuffers(getActiveChannel(rowIdx)));
@@ -387,18 +484,40 @@ async function loadSamples() {
   await Promise.all(jobs);
 }
 
+function getAllChannelsForKit(kit) {
+  const map = new Map();
+  // Default channels from the kit's label order
+  instruments.forEach((key, idx) => {
+    const label = kit?.labels?.[idx] ?? key;
+    const samples = kit?.samples?.[key];
+    if (samples) {
+      map.set(key, { key, label, samples });
+    }
+  });
+  // Extra alternate channels (e.g. 808 Conga)
+  Object.values(kit?.channels || {}).forEach((list) => {
+    list.forEach((ch) => {
+      if (!map.has(ch.key)) {
+        map.set(ch.key, { ...ch });
+      }
+    });
+  });
+  return Array.from(map.values());
+}
+
 function getActiveChannel(rowIdx) {
   const kit = kits[currentKit];
-  const channels = kit?.channels?.[rowIdx];
+  const all = getAllChannelsForKit(kit);
   const defaultKey = instruments[rowIdx];
-  const defaultLabel = kit?.labels?.[rowIdx] ?? defaultKey;
-  const defaultSamples = kit?.samples?.[defaultKey];
-  if (!channels || channels.length === 0) {
-    return { key: defaultKey, label: defaultLabel, samples: defaultSamples };
-  }
-  const assignedKey = kitChannelAssignments[currentKit]?.[rowIdx];
-  const match = channels.find((c) => c.key === assignedKey);
-  return match ?? channels[0];
+  const assignedKey = kitChannelAssignments[currentKit]?.[currentBank]?.[rowIdx];
+  const key = assignedKey || defaultKey;
+  return (
+    all.find((ch) => ch.key === key) || {
+      key: defaultKey,
+      label: kit?.labels?.[rowIdx] ?? defaultKey,
+      samples: kit?.samples?.[defaultKey],
+    }
+  );
 }
 
 function getMaxLayer(rowIdx) {
@@ -422,12 +541,15 @@ function playInstrument(name, when, layer, channelKey) {
   const anySolo = soloTracks.some(Boolean);
   const isAudible = !mutedTracks[instIdx] && (!anySolo || soloTracks[instIdx]);
   const sampleGain = (currentKit === "Acoustic" && name === "Snare" && idx === 0) ? 0.7 : 1;
+  const kit = kits[currentKit] ?? {};
+  const kitMasterGain = kit.masterGain ?? 1;
+  const kitChannelGain = kit.channelGains?.[name] ?? 1;
   const isAccent = accentSteps.includes(currentStep);
-  let finalGain = volume * (trackVolumes[instIdx] ?? 1) * sampleGain;
+  let finalGain = volume * (trackVolumes[instIdx] ?? 1) * kitMasterGain * kitChannelGain * sampleGain;
   if (isAccent) finalGain = 1;
   gain.gain.value = isAudible ? finalGain : 0;
   src.connect(gain);
-  gain.connect(audioCtx.destination);
+  gain.connect(masterOut || audioCtx.destination);
   src.start(t);
 }
 
@@ -447,11 +569,169 @@ function updatePadVisuals(pad, layer, maxLayer) {
   pad.classList.toggle("active", layer > 0);
   const ratio = maxLayer > 0 ? Math.min(1, layer / maxLayer) : 0;
   pad.style.setProperty("--layer-ratio", ratio);
+
+  // Layer shape + color indicator
+  pad.classList.remove("layer-1", "layer-2", "layer-3");
+  const marker = pad.querySelector(".pad-layer-marker");
+  if (marker) {
+    marker.classList.remove("marker-dot", "marker-ring", "marker-star");
+  }
+  if (layer > 0) {
+    const clamped = Math.min(3, layer);
+    pad.classList.add(`layer-${clamped}`);
+    if (marker) {
+      const shapeClass = clamped === 1 ? "marker-dot" : clamped === 2 ? "marker-ring" : "marker-star";
+      marker.classList.add(shapeClass);
+    }
+  }
+
+  // Keep canvas glow cache in sync
+  const row = parseInt(pad.dataset.row, 10);
+  const col = parseInt(pad.dataset.col, 10);
+  if (!Number.isNaN(row) && !Number.isNaN(col) && glowPadRects[row * STEPS + col]) {
+    glowPadRects[row * STEPS + col].layerRatio = ratio;
+  }
+}
+
+function initGlowCanvas() {
+  if (!glowCanvas) return;
+  glowCtx = glowCanvas.getContext("2d", { alpha: true });
+  resizeGlowCanvas();
+  cacheGlowPadRects();
+}
+
+function resizeGlowCanvas() {
+  if (!glowCanvas || !sequencer) return;
+  const cssWidth = sequencer.clientWidth;
+  const cssHeight = sequencer.clientHeight;
+  // iPad: render at 1x to keep GPU cost low; desktop: up to DPR 1.5
+  glowScale = pointerCoarse ? 1 : Math.min(1.5, window.devicePixelRatio || 1);
+  glowCanvas.width = Math.max(1, Math.floor(cssWidth * glowScale));
+  glowCanvas.height = Math.max(1, Math.floor(cssHeight * glowScale));
+  glowCanvas.style.width = cssWidth + "px";
+  glowCanvas.style.height = cssHeight + "px";
+  if (glowCtx) {
+    glowCtx.setTransform(glowScale, 0, 0, glowScale, 0, 0);
+  }
+}
+
+function cacheGlowPadRects() {
+  if (!sequencer) return;
+  glowPadRects = [];
+  const seqRect = sequencer.getBoundingClientRect();
+  pads.forEach((row, r) => {
+    row.forEach((pad, c) => {
+      if (!pad) return;
+      const rect = pad.getBoundingClientRect();
+      glowPadRects[r * STEPS + c] = {
+        x: rect.left - seqRect.left,
+        y: rect.top - seqRect.top,
+        w: rect.width,
+        h: rect.height,
+        layerRatio: parseFloat(pad.style.getPropertyValue("--layer-ratio")) || 1,
+      };
+    });
+  });
+}
+
+function drawRoundedRect(ctx, x, y, w, h, r) {
+  const radius = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.lineTo(x + w - radius, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
+  ctx.lineTo(x + w, y + h - radius);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+  ctx.lineTo(x + radius, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
+  ctx.lineTo(x, y + radius);
+  ctx.quadraticCurveTo(x, y, x + radius, y);
+  ctx.closePath();
+}
+
+function drawAccentGlow(opacity) {
+  if (!glowCtx || !glowCanvas) return;
+  const cssWidth = sequencer.clientWidth;
+  const cssHeight = sequencer.clientHeight;
+  glowCtx.clearRect(0, 0, cssWidth, cssHeight);
+  if (lightingScheme !== 'aura' || !lightingEnabled || opacity <= 0.001) return;
+
+  // Glow parameters tuned to match the original 0 0 26px 6px box-shadow
+  const baseBlur = 26;
+  const baseSpread = 6;
+  const baseAlpha = 0.32;
+
+  pads.forEach((row, r) => {
+    row.forEach((pad, c) => {
+      if (!pad || !pad.classList.contains("active")) return;
+      const rect = glowPadRects[r * STEPS + c];
+      if (!rect) return;
+      const ratio = rect.layerRatio;
+      const blur = baseBlur * ratio;
+      const spread = baseSpread * ratio;
+      const alpha = baseAlpha * ratio * opacity;
+
+      glowCtx.save();
+      // Outer soft halo
+      glowCtx.shadowColor = `rgba(255, 255, 255, ${alpha})`;
+      glowCtx.shadowBlur = blur;
+      glowCtx.fillStyle = "rgba(255, 255, 255, 0)";
+      drawRoundedRect(
+        glowCtx,
+        rect.x - spread,
+        rect.y - spread,
+        rect.w + spread * 2,
+        rect.h + spread * 2,
+        6 + spread
+      );
+      glowCtx.fill();
+
+      // Brighter inner core
+      glowCtx.shadowColor = `rgba(255, 255, 255, ${alpha * 0.6})`;
+      glowCtx.shadowBlur = blur * 0.4;
+      glowCtx.fillStyle = `rgba(255, 255, 255, ${alpha * 0.25})`;
+      drawRoundedRect(glowCtx, rect.x, rect.y, rect.w, rect.h, 6);
+      glowCtx.fill();
+      glowCtx.restore();
+    });
+  });
+}
+
+function animateAccentGlow(duration) {
+  if (!glowCanvas || !glowCtx) return;
+  accentGlowActive = true;
+  const start = performance.now();
+  if (glowRaf) cancelAnimationFrame(glowRaf);
+
+  function frame(now) {
+    const elapsed = now - start;
+    const progress = Math.min(elapsed / duration, 1);
+    // Fast-in, slow-peak, fast-out envelope
+    const opacity = Math.sin(progress * Math.PI);
+    drawAccentGlow(opacity);
+    if (progress < 1) {
+      glowRaf = requestAnimationFrame(frame);
+    } else {
+      accentGlowActive = false;
+      drawAccentGlow(0);
+    }
+  }
+  glowRaf = requestAnimationFrame(frame);
+}
+
+function stopAccentGlow() {
+  accentGlowActive = false;
+  if (glowRaf) {
+    cancelAnimationFrame(glowRaf);
+    glowRaf = null;
+  }
+  drawAccentGlow(0);
 }
 
 function buildSequencer() {
   sequencer.innerHTML = "";
   pads = [];
+  trackLabels = [];
   instruments.forEach((name, rowIdx) => {
     const channel = getActiveChannel(rowIdx);
     const label = document.createElement("button");
@@ -463,9 +743,10 @@ function buildSequencer() {
     label.setAttribute("aria-expanded", "false");
     label.addEventListener("click", (e) => {
       e.stopPropagation();
-      openChannelDropdown(label, rowIdx);
+      openChannelMorph(label, rowIdx);
     });
     sequencer.appendChild(label);
+    trackLabels[rowIdx] = label;
 
     const rowPads = [];
     for (let col = 0; col < STEPS; col++) {
@@ -474,6 +755,12 @@ function buildSequencer() {
       pad.dataset.row = rowIdx;
       pad.dataset.col = col;
       pad.type = "button";
+
+      const marker = document.createElement("span");
+      marker.className = "pad-layer-marker";
+      marker.setAttribute("aria-hidden", "true");
+      pad.appendChild(marker);
+
       pad.addEventListener("click", () => {
         ensureAudio().then(() => {
           const currentMaxLayer = getMaxLayer(rowIdx);
@@ -495,6 +782,7 @@ function buildSequencer() {
     }
     pads.push(rowPads);
   });
+  initGlowCanvas();
 }
 
 function updateTrackLabels() {
@@ -506,83 +794,158 @@ function updateTrackLabels() {
   });
 }
 
-let activeChannelDropdown = null;
+let activeChannelMorph = null;
 
-function openChannelDropdown(labelEl, rowIdx) {
-  closeChannelDropdown();
-  const channels = kits[currentKit]?.channels?.[rowIdx];
-  if (!channels || channels.length < 2) return;
+function openChannelMorph(labelEl, rowIdx) {
+  closeChannelMorph();
+  const kit = kits[currentKit];
+  const channels = getAllChannelsForKit(kit);
+  if (channels.length < 2) return;
 
-  const dropdown = document.createElement("ul");
-  dropdown.className = "channel-dropdown";
-  dropdown.setAttribute("role", "listbox");
-  dropdown.dataset.row = rowIdx;
+  const rect = labelEl.getBoundingClientRect();
+  const vv = window.visualViewport;
+  // iOS Safari 双指缩放后，getBoundingClientRect() 返回视觉视口坐标，
+  // 而 position:fixed 元素是相对于布局视口定位的，需要补上视觉视口的偏移。
+  const vvLeft = vv ? vv.offsetLeft : 0;
+  const vvTop = vv ? vv.offsetTop : 0;
+  const fixedLeft = rect.left + vvLeft;
+  const fixedTop = rect.top + vvTop;
+  const fixedBottom = rect.bottom + vvTop;
 
   const currentKey = getActiveChannel(rowIdx).key;
-  channels.forEach((channel) => {
-    const item = document.createElement("li");
-    item.className = "channel-option";
-    item.setAttribute("role", "option");
-    item.setAttribute("aria-selected", String(channel.key === currentKey));
-    item.textContent = channel.label;
-    item.dataset.key = channel.key;
-    item.addEventListener("click", (e) => {
-      e.stopPropagation();
-      selectChannel(rowIdx, channel.key);
-      closeChannelDropdown();
-    });
-    dropdown.appendChild(item);
-  });
+  const menuWidth = 140;
+  const menuHeight = channels.length * 32 + 8;
+  const targetWidth = Math.max(menuWidth, rect.width);
+  const targetHeight = Math.max(menuHeight, rect.height);
 
-  document.body.appendChild(dropdown);
-  activeChannelDropdown = dropdown;
+  const viewportHeight = vv ? vv.height : window.innerHeight;
+  const spaceBelow = viewportHeight - rect.bottom;
+  const spaceAbove = rect.top;
+  const expandUpward = menuHeight > spaceBelow && menuHeight <= spaceAbove;
+  const targetTop = expandUpward ? fixedBottom - targetHeight : fixedTop;
+
+  const morph = document.createElement("div");
+  morph.className = "channel-morph";
+  morph.style.left = `${fixedLeft}px`;
+  morph.style.top = `${fixedTop}px`;
+  morph.style.width = `${rect.width}px`;
+  morph.style.height = `${rect.height}px`;
+  morph.style.borderRadius = "4px";
+  morph.dataset.row = rowIdx;
+  morph.dataset.originWidth = `${rect.width}px`;
+  morph.dataset.originHeight = `${rect.height}px`;
+  morph.dataset.originTop = `${fixedTop}px`;
+  morph.dataset.targetWidth = `${targetWidth}px`;
+  morph.dataset.targetHeight = `${targetHeight}px`;
+  morph.dataset.targetTop = `${targetTop}px`;
+  morph.dataset.expandUpward = String(expandUpward);
+
+  const labelClone = document.createElement("div");
+  labelClone.className = "morph-label";
+  labelClone.textContent = labelEl.textContent;
+  morph.appendChild(labelClone);
+
+  const menu = document.createElement("div");
+  menu.className = "morph-menu";
+  menu.setAttribute("role", "listbox");
+  channels.forEach((channel) => {
+    const option = document.createElement("div");
+    option.className = "morph-option";
+    option.setAttribute("role", "option");
+    option.setAttribute("aria-selected", String(channel.key === currentKey));
+    option.textContent = channel.label;
+    option.dataset.key = channel.key;
+    option.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const newLabel = channel.label;
+      labelEl.textContent = newLabel;
+      const morphLabel = morph.querySelector(".morph-label");
+      if (morphLabel) morphLabel.textContent = newLabel;
+      selectChannel(rowIdx, channel.key);
+      closeChannelMorph();
+    });
+    menu.appendChild(option);
+  });
+  morph.appendChild(menu);
+
+  document.body.appendChild(morph);
+  activeChannelMorph = morph;
   labelEl.setAttribute("aria-expanded", "true");
 
-  positionChannelDropdown(labelEl, dropdown);
-
   requestAnimationFrame(() => {
-    document.addEventListener("click", outsideDropdownClick, { once: true });
-    document.addEventListener("keydown", dropdownKeydown);
+    morph.setAttribute("data-open", "true");
+    morph.style.width = morph.dataset.targetWidth;
+    morph.style.height = morph.dataset.targetHeight;
+    morph.style.top = morph.dataset.targetTop;
+    morph.style.borderRadius = "8px";
+    document.addEventListener("click", outsideMorphClick, { once: true });
+    document.addEventListener("keydown", morphKeydown);
   });
+
+  const onOpenEnd = (e) => {
+    if (e.propertyName === "width" && e.target === morph) {
+      morph.removeEventListener("transitionend", onOpenEnd);
+      if (lightingScheme === "aura") {
+        refreshRevealEls();
+        scheduleRevealUpdate();
+      }
+    }
+  };
+  morph.addEventListener("transitionend", onOpenEnd);
 }
 
-function positionChannelDropdown(labelEl, dropdown) {
-  const rect = labelEl.getBoundingClientRect();
-  dropdown.style.left = `${rect.left}px`;
-  dropdown.style.top = `${rect.bottom + 4}px`;
-}
-
-function closeChannelDropdown() {
-  if (!activeChannelDropdown) return;
-  const rowIdx = activeChannelDropdown.dataset.row;
+function closeChannelMorph() {
+  if (!activeChannelMorph) return;
+  const morph = activeChannelMorph;
+  const rowIdx = morph.dataset.row;
   const labelEl = document.querySelector(`.track-label[data-row="${rowIdx}"]`);
   if (labelEl) labelEl.setAttribute("aria-expanded", "false");
-  activeChannelDropdown.remove();
-  activeChannelDropdown = null;
-  document.removeEventListener("keydown", dropdownKeydown);
+
+  morph.removeAttribute("data-open");
+  morph.style.width = morph.dataset.originWidth;
+  morph.style.height = morph.dataset.originHeight;
+  morph.style.top = morph.dataset.originTop;
+  morph.style.borderRadius = "4px";
+
+  setTimeout(() => {
+    morph.remove();
+    if (activeChannelMorph === morph) activeChannelMorph = null;
+    if (lightingScheme === "aura") {
+      refreshRevealEls();
+      scheduleRevealUpdate();
+    }
+  }, 350);
+
+  document.removeEventListener("keydown", morphKeydown);
 }
 
-function outsideDropdownClick(e) {
-  if (!activeChannelDropdown) return;
-  if (!activeChannelDropdown.contains(e.target)) {
-    closeChannelDropdown();
+function outsideMorphClick(e) {
+  if (!activeChannelMorph) return;
+  if (!activeChannelMorph.contains(e.target)) {
+    closeChannelMorph();
   }
 }
 
-function dropdownKeydown(e) {
+function morphKeydown(e) {
   if (e.key === "Escape") {
     e.preventDefault();
-    closeChannelDropdown();
+    closeChannelMorph();
   }
 }
 
 async function selectChannel(rowIdx, channelKey) {
   if (!kitChannelAssignments[currentKit]) kitChannelAssignments[currentKit] = {};
-  kitChannelAssignments[currentKit][rowIdx] = channelKey;
-
-  await ensureAudio();
+  if (!kitChannelAssignments[currentKit][currentBank]) kitChannelAssignments[currentKit][currentBank] = {};
+  kitChannelAssignments[currentKit][currentBank][rowIdx] = channelKey;
 
   const channel = getActiveChannel(rowIdx);
+
+  // Update label immediately on selection, without waiting for audio load
+  // or the morph menu to close.
+  const label = trackLabels[rowIdx];
+  if (label) label.textContent = channel.label;
+
+  await ensureAudio();
   await loadChannelBuffers(channel);
 
   const newMaxLayer = Math.max(1, Array.isArray(channel.samples) ? channel.samples.length : 1);
@@ -595,7 +958,6 @@ async function selectChannel(rowIdx, channelKey) {
   }
 
   syncDomToBank();
-  updateTrackLabels();
   buildTrackVolumes();
   updateVisualization();
   refreshSelectedCenters();
@@ -754,6 +1116,7 @@ window.addEventListener("mousemove", (e) => {
 window.addEventListener("mouseup", () => {
   if (draggedVol) draggedVol.classList.remove("dragging");
   draggedVol = null;
+  if (lightingTier === "reduced") refreshSelectedCenters();
 });
 
 window.addEventListener(
@@ -769,6 +1132,7 @@ window.addEventListener(
 window.addEventListener("touchend", () => {
   if (draggedVol) draggedVol.classList.remove("dragging");
   draggedVol = null;
+  if (lightingTier === "reduced") refreshSelectedCenters();
 });
 
 function updatePlayhead() {
@@ -776,13 +1140,20 @@ function updatePlayhead() {
   playheadBar.style.left = `calc(${currentStep} * ((100% - 120px) / 16 + 8px))`;
 }
 
-function highlightStep(step) {
-  pads.forEach((row) => {
-    row.forEach((pad, col) => {
-      pad.classList.toggle("current", col === step);
-    });
-  });
-}
+let prevStep = -1;
+
+	function highlightStep(step) {
+	  // 仅更新变化的列，避免遍历全部 128 个 pad
+	  if (prevStep >= 0 && prevStep !== step) {
+	    pads.forEach((row) => {
+	      if (row[prevStep]) row[prevStep].classList.remove("current");
+	    });
+	  }
+	  pads.forEach((row) => {
+	    if (row[step]) row[step].classList.add("current");
+	  });
+	  prevStep = step;
+	}
 
 function getBeatConfig() {
   const { top, bottom } = timeSignature;
@@ -807,6 +1178,7 @@ function getBeatConfig() {
 
 function buildBeatMarkers() {
   beatMarkers.innerHTML = "";
+  beatMarkerEls = [];
 
   const accentTitle = document.createElement("div");
   accentTitle.className = "accent-title";
@@ -825,6 +1197,7 @@ function buildBeatMarkers() {
     span.dataset.step = step;
     span.style.gridColumn = step + 2;
     beatMarkers.appendChild(span);
+    beatMarkerEls.push(span);
   }
 
   beatNumbers = beatMarkers.querySelectorAll(".beat-number");
@@ -877,7 +1250,7 @@ function setupTimeSignature() {
 function updateBeatMarkers(step) {
   // 底部标记同时作为 Accent 编辑器。
   // 重音数字动画从前一列开始，持续到后两列结束（共约 4 个 step 时长）。
-  beatMarkers.querySelectorAll(".beat-marker").forEach((marker) => {
+  beatMarkerEls.forEach((marker) => {
     const markerStep = parseInt(marker.dataset.step, 10);
     const offset = (step - markerStep + STEPS) % STEPS;
 
@@ -909,33 +1282,38 @@ function updateBeatMarkers(step) {
 }
 
 function pulseMotion() {
-  if (!lightingEnabled) return;
+  if (lightingScheme !== 'aura' || !lightingEnabled) return;
+  // Mobile devices skip the motion-layer pulse to avoid frame drops.
+  if (pointerCoarse || lightingTier === "minimal") return;
   motionLayer.classList.add("on");
   setTimeout(() => motionLayer.classList.remove("on"), 90);
 }
 
 function triggerAccentPadHit(step) {
-  if (!lightingEnabled) return;
+  if (lightingScheme !== 'aura' || !lightingEnabled) return;
   if (!accentSteps.includes(step)) return;
   const duration = (0.5 * 60000) / bpm;
-  const toAnimate = [];
-  pads.forEach((row, rowIdx) => {
-    row.forEach((pad, col) => {
-      if (!pad || bankStates[currentBank][rowIdx][col] <= 0) return;
-      pad.classList.remove("accent-hit");
-      toAnimate.push(pad);
-    });
-  });
-  if (toAnimate.length === 0) return;
-  void toAnimate[0].offsetWidth;
-  toAnimate.forEach((pad) => pad.classList.add("accent-hit"));
-  setTimeout(() => {
-    toAnimate.forEach((pad) => pad.classList.remove("accent-hit"));
+
+  // Fast path: only need to know whether any non-empty pad exists in the grid.
+  let hasAny = false;
+  for (let r = 0; r < pads.length; r++) {
+    const rowState = bankStates[currentBank][r];
+    for (let c = 0; c < rowState.length; c++) {
+      if (pads[r][c] && rowState[c] > 0) {
+        hasAny = true;
+        break;
+      }
+    }
+    if (hasAny) break;
+  }
+  if (!hasAny) return;
+
+  // Mobile keeps only static highlights; skip the dynamic accent flash to avoid frame drops.
+  if (!pointerCoarse) {
+    animateAccentGlow(duration);
     refreshSelectedCenters();
     scheduleRevealUpdate();
-  }, duration);
-  refreshSelectedCenters();
-  scheduleRevealUpdate();
+  }
 }
 
 function tick() {
@@ -967,19 +1345,29 @@ async function start() {
 }
 
 function stop() {
-  isPlaying = false;
-  playBtn.classList.remove("playing");
+	  isPlaying = false;
+	  prevStep = -1;
+	  playBtn.classList.remove("playing");
   appEl.classList.remove("is-playing");
   playheadBar.classList.remove("on");
-  beatMarkers.querySelectorAll(".beat-marker.active").forEach((marker) => {
-    marker.classList.remove("active");
-    marker.classList.add("beat-leave");
+  pads.forEach((row) => {
+    row.forEach((pad) => pad && pad.classList.remove("current"));
   });
+  // 暂停时保留底部重音点/数字的当前样式，不触发离开动画
+  sequencer.classList.remove("accent-hit-active");
+  stopAccentGlow();
+  if (accentHitTimer) {
+    clearTimeout(accentHitTimer);
+    accentHitTimer = null;
+  }
   document.querySelectorAll(".pad.accent-hit").forEach((pad) => pad.classList.remove("accent-hit"));
-  refreshSelectedCenters();
+  // 暂停时不重新扫描全部 active 元素，只剔除已失效的光源，防止新光源在暂停瞬间造成闪光
+  pruneSelectedCenters();
   scheduleRevealUpdate();
   if (timer) clearTimeout(timer);
   timer = null;
+  perfFrameSamples = [];
+  perfLastFrameTime = 0;
 }
 
 function schedule() {
@@ -1042,17 +1430,202 @@ beatMarkers.addEventListener("click", (e) => {
   buildBeatMarkers();
 });
 
+function clearAll() {
+  bankStates = Array.from({ length: BANKS }, () =>
+    instruments.map(() => Array(STEPS).fill(0))
+  );
+  accentSteps = [];
+  buildBeatMarkers();
+  syncDomToBank();
+  updateVisualization();
+  refreshSelectedCenters();
+  scheduleRevealUpdate();
+}
+
+function openClearConfirm() {
+  if (clearConfirmModal) clearConfirmModal.hidden = false;
+}
+
+function closeClearConfirm() {
+  if (clearConfirmModal) clearConfirmModal.hidden = true;
+}
+
 if (clearBtn) {
-  clearBtn.addEventListener("click", () => {
-    bankStates = Array.from({ length: BANKS }, () =>
-      instruments.map(() => Array(STEPS).fill(0))
-    );
-    accentSteps = [];
-    buildBeatMarkers();
-    syncDomToBank();
-    updateVisualization();
-    refreshSelectedCenters();
-    scheduleRevealUpdate();
+  clearBtn.addEventListener("click", openClearConfirm);
+}
+
+if (confirmClearBtn) {
+  confirmClearBtn.addEventListener("click", () => {
+    clearAll();
+    closeClearConfirm();
+  });
+}
+
+if (cancelClearBtn) {
+  cancelClearBtn.addEventListener("click", closeClearConfirm);
+}
+
+if (clearConfirmModal) {
+  clearConfirmModal.addEventListener("click", (e) => {
+    if (e.target === clearConfirmModal || e.target.classList.contains("confirm-modal-backdrop")) {
+      closeClearConfirm();
+    }
+  });
+}
+
+function formatRecordTime(totalSeconds) {
+  const m = Math.floor(totalSeconds / 60);
+  const s = totalSeconds % 60;
+  const mm = String(m).padStart(2, "0");
+  const ss = String(s).padStart(2, "0");
+  return `${mm}：${ss}`;
+}
+
+function renderRecordTimer(totalSeconds, animate = true) {
+  if (!recordTimerDigits) return;
+  const text = formatRecordTime(totalSeconds);
+  const chars = text.split("");
+  const html = chars
+    .map((ch, i) => {
+      const stagger = ch === "：" ? ' data-stagger="1"' : "";
+      return `<span class="t-digit"${stagger}>${ch}</span>`;
+    })
+    .join("");
+  recordTimerDigits.innerHTML = html;
+  if (!animate) {
+    recordTimerDigits.classList.add("is-animating");
+    return;
+  }
+  recordTimerDigits.classList.remove("is-animating");
+  requestAnimationFrame(() => {
+    void recordTimerDigits.offsetWidth;
+    recordTimerDigits.classList.add("is-animating");
+  });
+}
+
+function updateRecordTimer() {
+  if (!isRecording) return;
+  const elapsed = Math.floor((performance.now() - recordStartTime) / 1000);
+  if (elapsed !== lastRecordSeconds) {
+    lastRecordSeconds = elapsed;
+    renderRecordTimer(elapsed);
+  }
+  recordRaf = requestAnimationFrame(updateRecordTimer);
+}
+
+function floatTo16BitPCM(input) {
+  const output = new Int16Array(input.length);
+  for (let i = 0; i < input.length; i++) {
+    const s = Math.max(-1, Math.min(1, input[i]));
+    output[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
+  }
+  return output;
+}
+
+function concatFloat32Buffers(buffers) {
+  let length = 0;
+  buffers.forEach((b) => (length += b.length));
+  const result = new Float32Array(length);
+  let offset = 0;
+  buffers.forEach((b) => {
+    result.set(b, offset);
+    offset += b.length;
+  });
+  return result;
+}
+
+function encodeMp3(left, right, sampleRate) {
+  const kbps = 192;
+  const channels = right ? 2 : 1;
+  const encoder = new lamejs.Mp3Encoder(channels, sampleRate, kbps);
+  const blockSize = 1152;
+  const mp3Data = [];
+  for (let i = 0; i < left.length; i += blockSize) {
+    const len = Math.min(blockSize, left.length - i);
+    const l = floatTo16BitPCM(left.subarray(i, i + len));
+    const r = right ? floatTo16BitPCM(right.subarray(i, i + len)) : l;
+    const buf = channels === 2 ? encoder.encodeBuffer(l, r) : encoder.encodeBuffer(l);
+    if (buf.length > 0) mp3Data.push(new Int8Array(buf));
+  }
+  const end = encoder.flush();
+  if (end.length > 0) mp3Data.push(new Int8Array(end));
+  return new Blob(mp3Data, { type: "audio/mp3" });
+}
+
+function downloadRecording(blob) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2, "0");
+  const mm = String(now.getMinutes()).padStart(2, "0");
+  const ss = String(now.getSeconds()).padStart(2, "0");
+  const ext = blob.type.includes("mp3") ? "mp3" : "webm";
+  a.download = `fourfour-recording-${hh}${mm}${ss}.${ext}`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+async function startRecording() {
+  if (isRecording) return;
+  await ensureAudio();
+  if (!audioCtx || !masterOut || typeof lamejs === "undefined") {
+    console.warn("无法启动录制");
+    return;
+  }
+  recordedBuffersL = [];
+  recordedBuffersR = [];
+  scriptProcessor = audioCtx.createScriptProcessor(4096, 2, 2);
+  scriptProcessor.onaudioprocess = (e) => {
+    if (!isRecording) return;
+    recordedBuffersL.push(new Float32Array(e.inputBuffer.getChannelData(0)));
+    const right = e.inputBuffer.getChannelData(1);
+    recordedBuffersR.push(new Float32Array(right));
+  };
+  const silentGain = audioCtx.createGain();
+  silentGain.gain.value = 0;
+  masterOut.connect(scriptProcessor);
+  scriptProcessor.connect(silentGain);
+  silentGain.connect(audioCtx.destination);
+  isRecording = true;
+  recordStartTime = performance.now();
+  lastRecordSeconds = -1;
+  if (recordBtn) recordBtn.classList.add("recording");
+  if (recordTimer) recordTimer.hidden = false;
+  renderRecordTimer(0);
+  recordRaf = requestAnimationFrame(updateRecordTimer);
+}
+
+function stopRecording() {
+  if (!isRecording) return;
+  isRecording = false;
+  if (recordRaf) {
+    cancelAnimationFrame(recordRaf);
+    recordRaf = null;
+  }
+  if (recordBtn) recordBtn.classList.remove("recording");
+  if (recordTimer) recordTimer.hidden = true;
+  lastRecordSeconds = -1;
+  if (scriptProcessor) {
+    scriptProcessor.onaudioprocess = null;
+    try { scriptProcessor.disconnect(); } catch {}
+    scriptProcessor = null;
+  }
+  if (recordedBuffersL.length === 0) return;
+  const left = concatFloat32Buffers(recordedBuffersL);
+  const right = recordedBuffersR.length > 0 ? concatFloat32Buffers(recordedBuffersR) : null;
+  const blob = encodeMp3(left, right, audioCtx.sampleRate);
+  downloadRecording(blob);
+  recordedBuffersL = [];
+  recordedBuffersR = [];
+}
+
+if (recordBtn) {
+  recordBtn.addEventListener("click", () => {
+    if (isRecording) stopRecording();
+    else startRecording();
   });
 }
 
@@ -1129,8 +1702,11 @@ if (panelToggle) {
     function animateRevealHighlights(now) {
       if (now - lastAnimFrame >= 33) {
         lastAnimFrame = now;
-        refreshRevealEls();
-        updateRevealHighlights();
+        // reduced/minimal 不需要动画期间逐帧重算，伪元素会跟随父元素移动
+        if (lightingScheme === 'aura' && lightingTier === "full") {
+          refreshRevealEls();
+          updateRevealHighlights();
+        }
       }
       if (now - animStart < animDuration) {
         panelRevealAnimation = requestAnimationFrame(animateRevealHighlights);
@@ -1140,7 +1716,11 @@ if (panelToggle) {
     }
     panelRevealAnimation = requestAnimationFrame(animateRevealHighlights);
     // 面板展开/收起动画结束后刷新元素位置缓存
-    setTimeout(refreshRevealEls, 700);
+    setTimeout(() => {
+      refreshRevealEls();
+      resizeGlowCanvas();
+      cacheGlowPadRects();
+    }, 700);
   });
 }
 
@@ -1228,6 +1808,7 @@ window.addEventListener("mousemove", (e) => {
 window.addEventListener("mouseup", () => {
   draggedMasterVol = false;
   if (volumeSlider) volumeSlider.classList.remove("dragging");
+  if (lightingTier === "reduced") refreshSelectedCenters();
 });
 
 window.addEventListener(
@@ -1242,6 +1823,7 @@ window.addEventListener(
 window.addEventListener("touchend", () => {
   draggedMasterVol = false;
   if (volumeSlider) volumeSlider.classList.remove("dragging");
+  if (lightingTier === "reduced") refreshSelectedCenters();
 });
 
 if (volumeIconBtn) {
@@ -1249,7 +1831,10 @@ if (volumeIconBtn) {
 }
 
 /* ---------- Reveal Highlight：按距离弥散到周围按钮 ---------- */
-const revealSelectors = ".pad, .chip, .step-btn, .play-btn, .panel-toggle, .toggle, .bank-btn, .vol-bar, .track-btn";
+// 移动端只让核心交互元素参与 Reveal，减少事件触发时的计算量
+const revealSelectors = pointerCoarse
+  ? ".pad, .chip, .play-btn, .bank-btn, .vol-bar"
+  : ".pad, .chip, .step-btn, .play-btn, .panel-toggle, .toggle, .bank-btn, .vol-bar, .morph-menu";
 let revealEls = [];
 let revealItems = []; // 缓存元素中心点，避免 mousemove 时强制重排
 let revealRaf = null;
@@ -1258,9 +1843,59 @@ let lastMouseY = -9999;
 let lastHighlightFrame = 0;
 let selectedCenters = []; // 已选中按钮（active pad / 播放中按钮 / active chip / active bank）的中心点
 let revealMaxDist = 220; // 高亮影响距离，随 pad 间距动态缩放
+const revealFrameBudget = pointerCoarse ? 45 : 30; // 移动 full 约 22fps，桌面 33fps
+
+// ---------- 运行时帧率守护：full / reduced 档播放时若 sustained 掉帧则自动降级 ----------
+let perfFrameSamples = [];
+let perfLastFrameTime = 0;
+
+function shouldRecordFramePerf() {
+  if (!isPlaying || !pointerCoarse) return false;
+  return lightingTier === "full" || lightingTier === "reduced";
+}
+
+function recordFramePerformance(now) {
+  if (!shouldRecordFramePerf()) return;
+  if (perfLastFrameTime) {
+    perfFrameSamples.push(now - perfLastFrameTime);
+    if (perfFrameSamples.length >= 60) {
+      const avg = perfFrameSamples.reduce((a, b) => a + b, 0) / perfFrameSamples.length;
+      perfFrameSamples = [];
+      if (avg > 45) {
+        downgradeLightingTier();
+      }
+    }
+  }
+  perfLastFrameTime = now;
+}
+
+function downgradeLightingTier() {
+  if (!appEl || lightingTier === "minimal") return;
+  const nextTier = lightingTier === "full" ? "reduced" : "minimal";
+  appEl.classList.remove(`tier-${lightingTier}`);
+  appEl.classList.add(`tier-${nextTier}`);
+  lightingTier = nextTier;
+  if (revealRaf) {
+    cancelAnimationFrame(revealRaf);
+    revealRaf = null;
+  }
+  refreshRevealEls();
+  refreshSelectedCenters();
+}
 
 function refreshRevealEls() {
-  const isCollapsed = appEl && appEl.classList.contains("collapsed");
+	  if (lightingScheme !== 'aura') {
+	    revealEls = [];
+	    revealItems = [];
+	    return;
+	  }
+	  // 低性能设备跳过元素位置缓存
+	  if (lightingTier === "minimal") {
+	    revealEls = [];
+	    revealItems = [];
+	    return;
+	  }
+	  const isCollapsed = appEl && appEl.classList.contains("collapsed");
   const settingsEl = document.querySelector(".settings");
   revealEls = Array.from(document.querySelectorAll(revealSelectors)).filter((el) => {
     // 收起设置面板时，面板内部元素已隐藏，不应再参与 Reveal Highlight 计算
@@ -1293,12 +1928,80 @@ function refreshRevealEls() {
   refreshSelectedCenters();
 }
 
+function applyStaticRevealHighlights() {
+  if (lightingScheme !== 'aura') return;
+  // 为 reduced 设备预置静态高光：激活元素照亮周围元素，视觉接近桌面 Reveal
+  if (!revealItems.length) return;
+
+  const maxDist = revealMaxDist;
+  // 每个元素最多受 N 个最近光源影响；其余光源忽略，避免远距离弱光源堆积计算
+  const MAX_SOURCES_PER_ITEM = pointerCoarse ? 3 : 5;
+  // 移动端进一步缩小影响距离，只照亮紧邻元素（约 2 个 pad 间隔）
+  const distanceCap = pointerCoarse ? maxDist * 0.45 : maxDist;
+
+  revealItems.forEach((item) => {
+    const nearby = [];
+
+    selectedCenters.forEach((center) => {
+      if (center.el === item.el) return;
+      const dx = center.cx - item.cx;
+      const dy = center.cy - item.cy;
+      const dist = Math.hypot(dx, dy);
+      const ratio = center.layerRatio ?? 1;
+      const sourceMaxDist = (center.isSmallBtn ? distanceCap * 0.5 : distanceCap) * ratio;
+      if (dist < sourceMaxDist && dist > 0) {
+        nearby.push({ center, dx, dy, dist, sourceMaxDist });
+      }
+    });
+
+    // 只取最近的光源，忽略远处的
+    nearby.sort((a, b) => a.dist - b.dist);
+    const limited = nearby.slice(0, MAX_SOURCES_PER_ITEM);
+
+    if (limited.length === 0) {
+      item.el.style.setProperty("--h-opacity", "0");
+      return;
+    }
+
+    const strokeSources = limited.map(({ center, dx, dy, dist, sourceMaxDist }) => {
+      const ratio = center.layerRatio ?? 1;
+      const weightMul = (center.isSmallBtn ? 0.5 : 1) * ratio;
+      const w = Math.max(0, 1 - dist / sourceMaxDist) * weightMul;
+      const angle = Math.atan2(dy, dx);
+      return { w, angle, dist };
+    });
+
+    const isVolBar = item.el.classList.contains("vol-bar");
+    const stroke = isVolBar
+      ? buildVolBarGradient(strokeSources, 0, item.width)
+      : buildRevealGradient(strokeSources, 0);
+    item.el.style.setProperty("--h-opacity", Math.min(1, stroke.maxIntensity).toFixed(3));
+    item.el.style.setProperty("--h-grad", stroke.gradient);
+  });
+
+  selectedCenters.forEach((center) => {
+    // Active pads already have their own white glow; don't add a static Reveal
+    // stroke on top, or they look permanently hovered on initial load.
+    const opacity = center.el.classList.contains("pad") ? "0" : "0.7";
+    center.el.style.setProperty("--h-opacity", opacity);
+    center.el.style.setProperty("--h-grad", conicGrad(0));
+  });
+}
+
 function refreshSelectedCenters() {
+  if (lightingScheme !== 'aura') {
+    selectedCenters = [];
+    return;
+  }
+  // 低性能设备跳过 Reveal 计算
+  if (lightingTier === "minimal") {
+    selectedCenters = [];
+    return;
+  }
   selectedCenters = [];
   const isCollapsed = appEl && appEl.classList.contains("collapsed");
   const settingsEl = document.querySelector(".settings");
   document.querySelectorAll(".pad.active, .play-btn.playing, .chip.active, .bank-btn.active, .track-btn.active").forEach((el) => {
-    // 收起设置面板时，跳过面板内部已被隐藏的光源，避免其继续影响外部元素
     if (isCollapsed && settingsEl && settingsEl.contains(el)) return;
     const rect = el.getBoundingClientRect();
     const isPad = el.classList.contains("pad");
@@ -1316,7 +2019,56 @@ function refreshSelectedCenters() {
         : 1,
     });
   });
-  updateRevealHighlights();
+  if (lightingTier === "reduced") {
+    applyStaticRevealHighlights();
+  } else {
+    updateRevealHighlights();
+  }
+}
+
+// 暂停时只移除失效的光源（如播放按钮），不重新扫描所有 active 元素，
+// 避免新光源在暂停瞬间让周围按钮出现突兀的高光闪烁。
+function pruneSelectedCenters() {
+  if (lightingScheme !== 'aura') {
+    selectedCenters = [];
+    return;
+  }
+  if (lightingTier === "minimal") {
+    selectedCenters = [];
+    return;
+  }
+  const isCollapsed = appEl && appEl.classList.contains("collapsed");
+  const settingsEl = document.querySelector(".settings");
+  selectedCenters = selectedCenters
+    .filter((center) => {
+      const el = center.el;
+      if (!el.isConnected) return false;
+      if (isCollapsed && settingsEl && settingsEl.contains(el)) return false;
+      return el.matches(".pad.active, .play-btn.playing, .chip.active, .bank-btn.active, .track-btn.active");
+    })
+    .map((center) => {
+      const el = center.el;
+      const rect = el.getBoundingClientRect();
+      const isPad = el.classList.contains("pad");
+      return {
+        el,
+        cx: rect.left + rect.width / 2,
+        cy: rect.top + rect.height / 2,
+        isPad,
+        isSmallBtn: el.classList.contains("track-btn"),
+        layerRatio: isPad
+          ? (parseFloat(el.style.getPropertyValue("--layer-ratio")) || 1) *
+            (el.classList.contains("accent-hit")
+              ? (parseInt(el.dataset.row, 10) === 0 ? 1.3 : 1.1)
+              : 1)
+          : 1,
+      };
+    });
+  if (lightingTier === "reduced") {
+    applyStaticRevealHighlights();
+  } else {
+    updateRevealHighlights();
+  }
 }
 
 function conicGrad(angle) {
@@ -1417,25 +2169,33 @@ function buildVolBarGradient(sources, baseAlpha = 0, width = 100) {
 }
 
 function updateRevealHighlights() {
-  revealRaf = null;
-  if (!lightingEnabled) {
-    revealItems.forEach((item) => item.el.style.setProperty("--h-opacity", "0"));
-    return;
-  }
-  if (!revealItems.length) return;
-  const maxDist = revealMaxDist;
+	  revealRaf = null;
+	  if (lightingScheme !== 'aura' || !lightingEnabled) {
+	    revealItems.forEach((item) => item.el.style.setProperty("--h-opacity", "0"));
+	    return;
+	  }
+	  if (!revealItems.length) return;
 
-  const draggedVolBar = draggedVol
-    ? draggedVol.querySelector(".vol-bar")
-    : volumeSlider && volumeSlider.classList.contains("dragging")
-    ? volumeSlider.querySelector(".vol-bar")
-    : null;
+	  // 仅 full tier 持续计算高光；reduced 只在拖拽音量条时进入此函数
+		  const isDragging = !!(draggedVol || draggedMasterVol);
+		  if (lightingTier !== "full" && !isDragging) {
+		    revealItems.forEach((item) => item.el.style.setProperty("--h-opacity", "0"));
+		    return;
+		  }
 
-  revealItems.forEach((item) => {
-    const strokeSources = [];
+	  const maxDist = revealMaxDist;
 
-    // 鼠标作为高光源；触控设备没有光标跟随，跳过以节省性能，但拖动音量条时例外
-    if (!isTouchDevice || draggedVolBar) {
+	  const draggedVolBar = draggedVol
+	    ? draggedVol.querySelector(".vol-bar")
+	    : volumeSlider && volumeSlider.classList.contains("dragging")
+	    ? volumeSlider.querySelector(".vol-bar")
+	    : null;
+
+	  revealItems.forEach((item) => {
+	    const strokeSources = [];
+
+	    // 鼠标作为高光源；reduced 设备仅在拖拽音量条时响应光标
+		    if (lightingTier === "full" || draggedVolBar) {
       const mouseDist = Math.hypot(lastMouseX - item.cx, lastMouseY - item.cy);
       if (mouseDist < maxDist) {
         const w = Math.max(0, 1 - mouseDist / maxDist);
@@ -1444,60 +2204,77 @@ function updateRevealHighlights() {
       }
     }
 
-    // 已选中按钮：所有非自身按钮都作为高光源（包括 pad，效果迁移到 pad 网格）
-    selectedCenters.forEach((center) => {
-      if (center.el === item.el) return;
-      const dx = center.cx - item.cx;
-      const dy = center.cy - item.cy;
-      const dist = Math.hypot(dx, dy);
-      // M/S 按钮体积小，对周围按钮的高光影响范围和强度都更小
-      // pad 按当前 layer 比例缩放高光影响范围和强度
-      const ratio = center.layerRatio ?? 1;
-      const sourceMaxDist = (center.isSmallBtn ? maxDist * 0.5 : maxDist) * ratio;
-      const weightMul = (center.isSmallBtn ? 0.5 : 1) * ratio;
-      if (dist < sourceMaxDist && dist > 0) {
-        const w = Math.max(0, 1 - dist / sourceMaxDist) * weightMul;
-        const angle = Math.atan2(dy, dx);
-        strokeSources.push({ w, angle, dist });
-      }
-    });
+	    // 已选中按钮：所有非自身按钮都作为高光源；仅 full tier 动态计算
+		    if (lightingTier === "full") {
+	      selectedCenters.forEach((center) => {
+	        if (center.el === item.el) return;
+	        const dx = center.cx - item.cx;
+	        const dy = center.cy - item.cy;
+	        const dist = Math.hypot(dx, dy);
+	        const ratio = center.layerRatio ?? 1;
+	        const sourceMaxDist = (center.isSmallBtn ? maxDist * 0.5 : maxDist) * ratio;
+	        const weightMul = (center.isSmallBtn ? 0.5 : 1) * ratio;
+	        if (dist < sourceMaxDist && dist > 0) {
+	          const w = Math.max(0, 1 - dist / sourceMaxDist) * weightMul;
+	          const angle = Math.atan2(dy, dx);
+	          strokeSources.push({ w, angle, dist });
+	        }
+	      });
+	    }
 
-    // 锐利描边（::after）：鼠标 + 选中按钮共同作用，按方向叠加
-    // toggle 需要完整圆环，但整体亮度仍随鼠标/光源方向变化
-    const isToggle = item.el.classList.contains("toggle");
-    const isVolBar = item.el.classList.contains("vol-bar");
-    const baseAlpha = isToggle && strokeSources.length > 0 ? 0.28 : 0;
-    const stroke = isVolBar
-      ? buildVolBarGradient(strokeSources, baseAlpha, item.width)
-      : buildRevealGradient(strokeSources, baseAlpha);
-    item.el.style.setProperty("--h-opacity", Math.min(1, stroke.maxIntensity).toFixed(3));
+	    const isToggle = item.el.classList.contains("toggle");
+	    const isVolBar = item.el.classList.contains("vol-bar");
+	    const baseAlpha = isToggle && strokeSources.length > 0 ? 0.28 : 0;
+	    const stroke = isVolBar
+	      ? buildVolBarGradient(strokeSources, baseAlpha, item.width)
+	      : buildRevealGradient(strokeSources, baseAlpha);
+	    item.el.style.setProperty("--h-opacity", Math.min(1, stroke.maxIntensity).toFixed(3));
     item.el.style.setProperty("--h-grad", stroke.gradient);
 
-    // 拖动音量条时，即使鼠标离开元素也保持完整高光并指向鼠标
-    if (draggedVolBar === item.el) {
-      const dx = lastMouseX - item.cx;
-      const dy = lastMouseY - item.cy;
-      const angle = Math.atan2(dy, dx);
-      const dist = Math.hypot(dx, dy);
-      const stroke = buildVolBarGradient([{ w: 1, angle, dist }], 0.45, item.width);
-      item.el.style.setProperty("--h-opacity", "1");
-      item.el.style.setProperty("--h-grad", stroke.gradient);
+    if (item.el.classList.contains("morph-menu")) {
+      const morphLeft = item.cx - item.width / 2;
+      const morphTop = item.cy - item.height / 2;
+      let rx = ((lastMouseX - morphLeft) / item.width) * 100;
+      let ry = ((lastMouseY - morphTop) / item.height) * 100;
+      rx = Math.max(0, Math.min(100, rx));
+      ry = Math.max(0, Math.min(100, ry));
+      item.el.style.setProperty(
+        "--h-grad",
+        `radial-gradient(circle at ${rx.toFixed(1)}% ${ry.toFixed(1)}%, rgba(255,255,255,0.85), rgba(255,255,255,0.30) 24%, transparent 48%)`
+      );
     }
-  });
-}
+
+    if (draggedVolBar === item.el) {
+	      const dx = lastMouseX - item.cx;
+	      const dy = lastMouseY - item.cy;
+	      const angle = Math.atan2(dy, dx);
+	      const dist = Math.hypot(dx, dy);
+	      const stroke = buildVolBarGradient([{ w: 1, angle, dist }], 0.45, item.width);
+	      item.el.style.setProperty("--h-opacity", "1");
+	      item.el.style.setProperty("--h-grad", stroke.gradient);
+	    }
+	  });
+	}
 
 function scheduleRevealUpdate() {
+  if (lightingScheme !== 'aura') return;
+  // full tier 持续调度 RAF；reduced/minimal 仅在拖拽音量条时调度
+  if (lightingTier !== "full" && !draggedVol && !draggedMasterVol) return;
   if (revealRaf) return;
   revealRaf = requestAnimationFrame((now) => {
     revealRaf = null;
-    // 限制约 30fps，降低快速移动鼠标时的 CPU 占用，避免影响音频调度
-    if (now - lastHighlightFrame < 30) return;
+    if (now - lastHighlightFrame < revealFrameBudget) return;
     lastHighlightFrame = now;
     updateRevealHighlights();
+    if (lightingTier === "full") recordFramePerformance(now);
   });
 }
 
 document.addEventListener("mousemove", (e) => {
+  // 移动端没有精细鼠标移动，跳过追踪以避免不必要的 RAF
+  if (pointerCoarse) return;
+  // 仅 full tier 或拖拽音量条时追踪光标
+  if (lightingTier !== "full" && !draggedVol && !draggedMasterVol) return;
   lastMouseX = e.clientX;
   lastMouseY = e.clientY;
   scheduleRevealUpdate();
@@ -1514,15 +2291,45 @@ document.addEventListener("mouseleave", () => {
 let resizeTimeout = null;
 window.addEventListener("resize", () => {
   clearTimeout(resizeTimeout);
-  resizeTimeout = setTimeout(refreshRevealEls, 100);
+  resizeTimeout = setTimeout(() => {
+    if (lightingScheme === 'aura') {
+      refreshRevealEls();
+      updateRevealHighlights();
+    }
+    resizeGlowCanvas();
+    cacheGlowPadRects();
+  }, 100);
 });
 
+if (window.visualViewport) {
+  window.visualViewport.addEventListener("resize", () => {
+    if (lightingScheme === 'aura') {
+      refreshRevealEls();
+      updateRevealHighlights();
+    }
+    resizeGlowCanvas();
+    cacheGlowPadRects();
+  });
+  window.visualViewport.addEventListener("scroll", () => {
+    if (lightingScheme === 'aura') {
+      refreshRevealEls();
+      updateRevealHighlights();
+    }
+    resizeGlowCanvas();
+    cacheGlowPadRects();
+  });
+}
+
 window.addEventListener("load", () => {
+  if (lightingScheme === 'aura') {
+    refreshRevealEls();
+    updateRevealHighlights();
+  }
+});
+if (lightingScheme === 'aura') {
   refreshRevealEls();
   updateRevealHighlights();
-});
-refreshRevealEls();
-updateRevealHighlights();
+}
 
 function setBpm(next) {
   bpm = Math.max(40, Math.min(220, Math.round(next)));
@@ -1578,15 +2385,62 @@ setupBpmStepper(bpmPlus, 1);
 if (topBpmMinus) setupBpmStepper(topBpmMinus, -1);
 if (topBpmPlus) setupBpmStepper(topBpmPlus, 1);
 
-motionToggle.addEventListener("change", (e) => {
-  lightingEnabled = e.target.checked;
-  document.querySelector(".app")?.classList.toggle("lighting-off", !lightingEnabled);
+function setScheme(scheme) {
+  if (!SCHEMES.includes(scheme)) return;
+  lightingScheme = scheme;
+  lightingEnabled = scheme !== 'off';
+  appEl.setAttribute('data-lighting-scheme', scheme);
+  appEl.classList.toggle('lighting-off', !lightingEnabled);
+
+  schemeSelector.querySelectorAll('.scheme-option').forEach((btn) => {
+    const active = btn.dataset.scheme === scheme;
+    btn.classList.toggle('active', active);
+    btn.setAttribute('aria-pressed', String(active));
+  });
+
+  if (lightingToggle) {
+    lightingToggle.checked = lightingEnabled;
+  }
+
+  if (lightingEnabled) {
+    schemeBeforeOff = scheme;
+  }
+
+  if (lightingScheme !== 'aura') {
+    if (revealRaf) {
+      cancelAnimationFrame(revealRaf);
+      revealRaf = null;
+    }
+    refreshSelectedCenters();
+  }
+
   if (!lightingEnabled) {
+    stopAccentGlow();
     revealItems.forEach((item) => item.el.style.setProperty("--h-opacity", "0"));
-  } else {
+  } else if (lightingScheme === 'aura') {
+    refreshRevealEls();
+    refreshSelectedCenters();
     scheduleRevealUpdate();
   }
+}
+
+schemeSelector.addEventListener('click', (e) => {
+  const btn = e.target.closest('.scheme-option');
+  if (!btn) return;
+  setScheme(btn.dataset.scheme);
 });
+
+if (lightingToggle) {
+  lightingToggle.addEventListener('change', () => {
+    if (lightingToggle.checked) {
+      setScheme(schemeBeforeOff);
+    } else {
+      setScheme('off');
+    }
+  });
+}
+
+setScheme(lightingScheme);
 
 async function applyPatternChannels(name) {
   const channels = patternChannels[name] ?? {};
@@ -1638,6 +2492,7 @@ function setupChips(container, isRhythm = false) {
       setBank(0);
       syncDomToBank();
       updateVisualization();
+      refreshRevealEls();
     } else {
       const kit = chip.textContent.trim();
       setKit(kit);
@@ -1651,13 +2506,15 @@ function setKit(name) {
   if (!kits[name] || currentKit === name) return;
   currentKit = name;
   loadPromise = null;
+  sampleBuffers = {};
   // 即使没有初始化音频，也主动创建上下文并加载新套件采样
   ensureAudio();
   updateTrackLabels();
   buildSequencer();
   buildTrackVolumes();
   syncDomToBank();
-  highlightStep(currentStep);
+  // 未播放时切换采样不应显示进度条
+  if (isPlaying) highlightStep(currentStep);
   updatePlayhead();
   refreshRevealEls();
   // 同步 Sample 选择区高亮
@@ -1672,24 +2529,35 @@ setupChips(document.getElementById("rhythmChips"), true);
 setupChips(document.getElementById("sampleChips"));
 
 /* ---------- 节奏可视化 ---------- */
+let vizBarEls = [];
+let vizBarCache = [];
+
 function buildVizGrid() {
+  vizGrid.innerHTML = "";
+  vizBarEls = [];
+  vizBarCache = [];
   for (let i = 0; i < STEPS; i++) {
     const bar = document.createElement("div");
     bar.className = "viz-bar";
     vizGrid.appendChild(bar);
+    vizBarEls.push(bar);
+    vizBarCache.push(null);
   }
 }
 
 function updateVisualization() {
-  const bars = vizGrid.querySelectorAll(".viz-bar");
-  bars.forEach((bar, col) => {
+  vizBarEls.forEach((bar, col) => {
     const totalRatio = bankStates[currentBank].reduce((sum, row, rowIdx) => {
       const maxLayer = getMaxLayer(rowIdx);
       return sum + (maxLayer > 0 ? row[col] / maxLayer : 0);
     }, 0);
     let h = 8 + (totalRatio / instruments.length) * 72;
     if (col === currentStep) h *= 1.25;
-    bar.style.height = `${Math.min(100, h)}%`;
+    const scale = (Math.min(100, h) / 100).toFixed(3);
+    if (vizBarCache[col] !== scale) {
+      vizBarCache[col] = scale;
+      bar.style.setProperty("--viz-scale", scale);
+    }
   });
 }
 
@@ -1845,7 +2713,6 @@ buildSmartDrums();
 buildTrackVolumes();
 buildBeatMarkers();
 setupTimeSignature();
-highlightStep(currentStep);
 updatePlayhead();
 applyPatternAllBanks(currentRhythm);
 syncDomToBank();
