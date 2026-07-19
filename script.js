@@ -20,9 +20,6 @@ const clearConfirmModal = document.getElementById("clearConfirmModal");
 const confirmClearBtn = document.getElementById("confirmClearBtn");
 const cancelClearBtn = document.getElementById("cancelClearBtn");
 const restartBtn = document.getElementById("restartBtn");
-const bpmValue = document.getElementById("bpmValue");
-const bpmMinus = document.getElementById("bpmMinus");
-const bpmPlus = document.getElementById("bpmPlus");
 const topBpmValue = document.getElementById("topBpmValue");
 const topBpmMinus = document.getElementById("topBpmMinus");
 const topBpmPlus = document.getElementById("topBpmPlus");
@@ -36,6 +33,42 @@ const sdPad = document.getElementById("sdPad");
 const sdPower = document.getElementById("sdPower");
 const sdDice = document.getElementById("sdDice");
 const appEl = document.querySelector(".app");
+
+// 窗口大小或浏览器缩放变化时：100%~125% 区间内对 .app 做 CSS zoom 缩放，
+// 同时考虑窗口可用宽高，确保 UI 不会被 body flex 容器挤到一起；
+// 超过 125% 不再继续缩放，直接由 body overflow 产生滚动条。
+function updateAppScale() {
+  const scale = window.visualViewport ? window.visualViewport.scale : 1;
+  // body 水平 padding 为 16px + 16px = 32px，垂直 padding 为 8px + 8px = 16px
+  const availableWidth = Math.max(1, window.innerWidth - 32);
+  const availableHeight = Math.max(1, window.innerHeight - 16);
+  const isCollapsed = appEl && appEl.classList.contains('collapsed');
+  const naturalWidth = isCollapsed ? 1320 : 1360;
+  const naturalHeight = 788;
+  // 当可用宽高不足时，需要把 .app 缩放到适应窗口；同时抵消浏览器缩放
+  const widthScale = naturalWidth / availableWidth;
+  const heightScale = naturalHeight / availableHeight;
+  const needed = Math.max(scale, widthScale, heightScale);
+  // 限制在 100%~125% 区间内
+  const clamped = Math.max(1, Math.min(needed, 1.25));
+  document.documentElement.style.setProperty("--app-scale", clamped.toFixed(3));
+  document.documentElement.style.setProperty("--app-width", naturalWidth + "px");
+  updateAppHeight();
+}
+
+// .app 高度随内容自适应，缩放容器高度与视觉高度保持一致，避免底部留白或内容被截断
+function updateAppHeight() {
+  if (!appEl) return;
+  document.documentElement.style.setProperty("--app-height", appEl.offsetHeight + "px");
+}
+
+updateAppScale();
+
+if (appEl && typeof ResizeObserver !== "undefined") {
+  const appHeightObserver = new ResizeObserver(() => updateAppHeight());
+  appHeightObserver.observe(appEl);
+}
+
 const pointerCoarse = window.matchMedia("(pointer: coarse)").matches;
 const memory = navigator.deviceMemory || 4;
 const cores = navigator.hardwareConcurrency || 4;
@@ -79,7 +112,6 @@ if (appEl) {
 let volume = 0.8;
 let isMuted = false;
 let volumeBeforeMute = 0.8;
-let settleTimeout = null;
 let timeSignature = { top: 4, bottom: 4 };
 let accentSteps = [];
 let accentHitTimer = null;
@@ -873,13 +905,19 @@ function openChannelMorph(labelEl, rowIdx) {
   labelEl.setAttribute("aria-expanded", "true");
 
   requestAnimationFrame(() => {
-    morph.setAttribute("data-open", "true");
-    morph.style.width = morph.dataset.targetWidth;
-    morph.style.height = morph.dataset.targetHeight;
-    morph.style.top = morph.dataset.targetTop;
-    morph.style.borderRadius = "8px";
-    document.addEventListener("click", outsideMorphClick, { once: true });
-    document.addEventListener("keydown", morphKeydown);
+    // 强制重排，确保 Firefox 等浏览器能正确触发初始状态到目标状态的过渡动画。
+    // 使用双重 rAF + 读写 offsetWidth/offsetHeight，避免 Firefox 批量处理样式更新。
+    void morph.offsetWidth;
+    void morph.offsetHeight;
+    requestAnimationFrame(() => {
+      morph.setAttribute("data-open", "true");
+      morph.style.width = morph.dataset.targetWidth;
+      morph.style.height = morph.dataset.targetHeight;
+      morph.style.top = morph.dataset.targetTop;
+      morph.style.borderRadius = "8px";
+      document.addEventListener("click", outsideMorphClick, { once: true });
+      document.addEventListener("keydown", morphKeydown);
+    });
   });
 
   const onOpenEnd = (e) => {
@@ -1136,8 +1174,8 @@ window.addEventListener("touchend", () => {
 });
 
 function updatePlayhead() {
-  playheadBar.style.width = "calc((100% - 120px) / 16)";
-  playheadBar.style.left = `calc(${currentStep} * ((100% - 120px) / 16 + 8px))`;
+  playheadBar.style.width = "calc((100% - 90px) / 16)";
+  playheadBar.style.left = `calc(${currentStep} * ((100% - 90px) / 16 + 6px))`;
 }
 
 let prevStep = -1;
@@ -1552,6 +1590,49 @@ function encodeMp3(left, right, sampleRate) {
   return new Blob(mp3Data, { type: "audio/mp3" });
 }
 
+function encodeWav(left, right, sampleRate) {
+  const channels = right ? 2 : 1;
+  const samples = left.length;
+  const blockAlign = channels * 2;
+  const byteRate = sampleRate * blockAlign;
+  const dataSize = samples * blockAlign;
+  const buffer = new ArrayBuffer(44 + dataSize);
+  const view = new DataView(buffer);
+
+  function writeString(offset, string) {
+    for (let i = 0; i < string.length; i++) {
+      view.setUint8(offset + i, string.charCodeAt(i));
+    }
+  }
+
+  writeString(0, "RIFF");
+  view.setUint32(4, 36 + dataSize, true);
+  writeString(8, "WAVE");
+  writeString(12, "fmt ");
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, channels, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, byteRate, true);
+  view.setUint16(32, blockAlign, true);
+  view.setUint16(34, 16, true);
+  writeString(36, "data");
+  view.setUint32(40, dataSize, true);
+
+  const leftPCM = floatTo16BitPCM(left);
+  const rightPCM = right ? floatTo16BitPCM(right) : null;
+  let offset = 44;
+  for (let i = 0; i < samples; i++) {
+    view.setInt16(offset, leftPCM[i], true);
+    offset += 2;
+    if (rightPCM) {
+      view.setInt16(offset, rightPCM[i], true);
+      offset += 2;
+    }
+  }
+  return new Blob([view], { type: "audio/wav" });
+}
+
 function downloadRecording(blob) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -1560,7 +1641,7 @@ function downloadRecording(blob) {
   const hh = String(now.getHours()).padStart(2, "0");
   const mm = String(now.getMinutes()).padStart(2, "0");
   const ss = String(now.getSeconds()).padStart(2, "0");
-  const ext = blob.type.includes("mp3") ? "mp3" : "webm";
+  const ext = blob.type.includes("mp3") ? "mp3" : blob.type.includes("wav") ? "wav" : "webm";
   a.download = `fourfour-recording-${hh}${mm}${ss}.${ext}`;
   document.body.appendChild(a);
   a.click();
@@ -1570,25 +1651,36 @@ function downloadRecording(blob) {
 
 async function startRecording() {
   if (isRecording) return;
-  await ensureAudio();
-  if (!audioCtx || !masterOut || typeof lamejs === "undefined") {
+  try {
+    await ensureAudio();
+  } catch (err) {
+    console.warn("无法启动录制：音频初始化失败", err);
+    return;
+  }
+  if (!audioCtx || !masterOut) {
     console.warn("无法启动录制");
     return;
   }
   recordedBuffersL = [];
   recordedBuffersR = [];
-  scriptProcessor = audioCtx.createScriptProcessor(4096, 2, 2);
-  scriptProcessor.onaudioprocess = (e) => {
-    if (!isRecording) return;
-    recordedBuffersL.push(new Float32Array(e.inputBuffer.getChannelData(0)));
-    const right = e.inputBuffer.getChannelData(1);
-    recordedBuffersR.push(new Float32Array(right));
-  };
-  const silentGain = audioCtx.createGain();
-  silentGain.gain.value = 0;
-  masterOut.connect(scriptProcessor);
-  scriptProcessor.connect(silentGain);
-  silentGain.connect(audioCtx.destination);
+  try {
+    scriptProcessor = audioCtx.createScriptProcessor(4096, 2, 2);
+    scriptProcessor.onaudioprocess = (e) => {
+      if (!isRecording) return;
+      const inputL = e.inputBuffer.getChannelData(0);
+      recordedBuffersL.push(new Float32Array(inputL));
+      const inputR = e.inputBuffer.numberOfChannels > 1 ? e.inputBuffer.getChannelData(1) : inputL;
+      recordedBuffersR.push(new Float32Array(inputR));
+    };
+    const silentGain = audioCtx.createGain();
+    silentGain.gain.value = 0;
+    masterOut.connect(scriptProcessor);
+    scriptProcessor.connect(silentGain);
+    silentGain.connect(audioCtx.destination);
+  } catch (err) {
+    console.warn("无法启动录制：处理器创建失败", err);
+    return;
+  }
   isRecording = true;
   recordStartTime = performance.now();
   lastRecordSeconds = -1;
@@ -1616,7 +1708,9 @@ function stopRecording() {
   if (recordedBuffersL.length === 0) return;
   const left = concatFloat32Buffers(recordedBuffersL);
   const right = recordedBuffersR.length > 0 ? concatFloat32Buffers(recordedBuffersR) : null;
-  const blob = encodeMp3(left, right, audioCtx.sampleRate);
+  const blob = typeof lamejs !== "undefined"
+    ? encodeMp3(left, right, audioCtx.sampleRate)
+    : encodeWav(left, right, audioCtx.sampleRate);
   downloadRecording(blob);
   recordedBuffersL = [];
   recordedBuffersR = [];
@@ -1625,7 +1719,7 @@ function stopRecording() {
 if (recordBtn) {
   recordBtn.addEventListener("click", () => {
     if (isRecording) stopRecording();
-    else startRecording();
+    else startRecording().catch((err) => console.warn("录制启动失败:", err));
   });
 }
 
@@ -1639,24 +1733,6 @@ window.addEventListener("keydown", (e) => {
     e.preventDefault();
     toggleMute();
   }
-});
-
-function resetTopBpmPopped() {
-  if (!topBpm) return;
-  topBpm.querySelectorAll(".step-btn").forEach((btn) => {
-    btn.classList.remove("popped");
-    btn.style.animation = "";
-  });
-}
-
-[topBpmMinus, topBpmPlus].forEach((btn) => {
-  if (!btn) return;
-  btn.addEventListener("animationend", (e) => {
-    if (e.animationName === "bpm-btn-pop") {
-      btn.style.animation = "none";
-      btn.classList.add("popped");
-    }
-  });
 });
 
 let panelRevealAnimation = null;
@@ -1673,26 +1749,13 @@ if (panelToggle) {
     appEl.classList.add("animate-settings");
     const isCollapsed = appEl.classList.contains("collapsed");
     if (isCollapsed) {
-      // 展开面板：同步开始 BPM 消失动画与设置面板展开
-      clearTimeout(settleTimeout);
-      if (topBpm) topBpm.classList.remove("settled");
-      resetTopBpmPopped();
-      if (topBpm) topBpm.classList.add("leaving");
       appEl.classList.remove("collapsed");
       panelToggle.setAttribute("aria-label", "收起设置");
-      setTimeout(() => {
-        if (topBpm) topBpm.classList.remove("leaving");
-      }, 700);
+      updateAppScale();
     } else {
-      // 收起面板：直接触发 BPM 出现动画
-      clearTimeout(settleTimeout);
-      resetTopBpmPopped();
-      if (topBpm) topBpm.classList.remove("leaving");
       appEl.classList.add("collapsed");
       panelToggle.setAttribute("aria-label", "展开设置");
-      settleTimeout = setTimeout(() => {
-        if (topBpm) topBpm.classList.add("settled");
-      }, 1000);
+      updateAppScale();
     }
     // 动画期间持续刷新位置与高亮，避免 pad 移动和高光脱节；限制 30fps 降低重排开销
     stopPanelRevealAnimation();
@@ -1844,6 +1907,7 @@ let lastHighlightFrame = 0;
 let selectedCenters = []; // 已选中按钮（active pad / 播放中按钮 / active chip / active bank）的中心点
 let revealMaxDist = 220; // 高亮影响距离，随 pad 间距动态缩放
 const revealFrameBudget = pointerCoarse ? 45 : 30; // 移动 full 约 22fps，桌面 33fps
+let needsZoomCoordFix = false; // 某些浏览器中 CSS zoom 使 getBoundingClientRect 返回布局坐标而非视觉坐标
 
 // ---------- 运行时帧率守护：full / reduced 档播放时若 sustained 掉帧则自动降级 ----------
 let perfFrameSamples = [];
@@ -2261,6 +2325,16 @@ function scheduleRevealUpdate() {
   // full tier 持续调度 RAF；reduced/minimal 仅在拖拽音量条时调度
   if (lightingTier !== "full" && !draggedVol && !draggedMasterVol) return;
   if (revealRaf) return;
+
+  // 若浏览器缩放或应用整体缩放比例已变化，先刷新元素位置缓存，避免光效相对鼠标偏移。
+  const currentScale = window.visualViewport ? window.visualViewport.scale : 1;
+  const currentAppScale = parseFloat(document.documentElement.style.getPropertyValue('--app-scale')) || 1;
+  if (currentScale !== lastVisualViewportScale || currentAppScale !== lastAppScale) {
+    lastVisualViewportScale = currentScale;
+    lastAppScale = currentAppScale;
+    refreshRevealEls();
+  }
+
   revealRaf = requestAnimationFrame((now) => {
     revealRaf = null;
     if (now - lastHighlightFrame < revealFrameBudget) return;
@@ -2275,8 +2349,21 @@ document.addEventListener("mousemove", (e) => {
   if (pointerCoarse) return;
   // 仅 full tier 或拖拽音量条时追踪光标
   if (lightingTier !== "full" && !draggedVol && !draggedMasterVol) return;
+  // getBoundingClientRect() 与 mousemove 的 clientX/Y 同处视觉视口坐标系，
+  // 直接比较即可；额外乘以 visualViewport.scale 反而会在浏览器缩放时引入偏移。
   lastMouseX = e.clientX;
   lastMouseY = e.clientY;
+
+  // 浏览器缩放或应用整体缩放过程中，若缓存的中心点基于旧缩放比例，
+  // 光效位置会相对鼠标偏移；发现缩放变化时立即刷新缓存。
+  const currentScale = window.visualViewport ? window.visualViewport.scale : 1;
+  const currentAppScale = parseFloat(document.documentElement.style.getPropertyValue('--app-scale')) || 1;
+  if (currentScale !== lastVisualViewportScale || currentAppScale !== lastAppScale) {
+    lastVisualViewportScale = currentScale;
+    lastAppScale = currentAppScale;
+    if (lightingScheme === 'aura') refreshRevealEls();
+  }
+
   scheduleRevealUpdate();
 });
 
@@ -2288,36 +2375,31 @@ document.addEventListener("mouseleave", () => {
 });
 
 // 缓存元素位置；resize/面板动画后需要重新计算
-let resizeTimeout = null;
-window.addEventListener("resize", () => {
-  clearTimeout(resizeTimeout);
-  resizeTimeout = setTimeout(() => {
+let resizeRaf = null;
+let lastVisualViewportScale = window.visualViewport ? window.visualViewport.scale : 1;
+let lastAppScale = parseFloat(document.documentElement.style.getPropertyValue('--app-scale')) || 1;
+
+function handleViewportChange() {
+  if (resizeRaf) cancelAnimationFrame(resizeRaf);
+  resizeRaf = requestAnimationFrame(() => {
+    resizeRaf = null;
+    updateAppScale();
+    lastVisualViewportScale = window.visualViewport ? window.visualViewport.scale : 1;
+    lastAppScale = parseFloat(document.documentElement.style.getPropertyValue('--app-scale')) || 1;
     if (lightingScheme === 'aura') {
       refreshRevealEls();
       updateRevealHighlights();
     }
     resizeGlowCanvas();
     cacheGlowPadRects();
-  }, 100);
-});
+  });
+}
+
+window.addEventListener("resize", handleViewportChange);
 
 if (window.visualViewport) {
-  window.visualViewport.addEventListener("resize", () => {
-    if (lightingScheme === 'aura') {
-      refreshRevealEls();
-      updateRevealHighlights();
-    }
-    resizeGlowCanvas();
-    cacheGlowPadRects();
-  });
-  window.visualViewport.addEventListener("scroll", () => {
-    if (lightingScheme === 'aura') {
-      refreshRevealEls();
-      updateRevealHighlights();
-    }
-    resizeGlowCanvas();
-    cacheGlowPadRects();
-  });
+  window.visualViewport.addEventListener("resize", handleViewportChange);
+  window.visualViewport.addEventListener("scroll", handleViewportChange);
 }
 
 window.addEventListener("load", () => {
@@ -2331,9 +2413,20 @@ if (lightingScheme === 'aura') {
   updateRevealHighlights();
 }
 
+// .app-scaler 宽度过渡期间元素位置连续变化，过渡结束后再刷新一次缓存，
+// 避免过渡最后一帧的位置与缓存有细微偏差。
+const appScalerEl = document.querySelector('.app-scaler');
+if (appScalerEl) {
+  appScalerEl.addEventListener('transitionend', (e) => {
+    if (e.propertyName === 'width' && lightingScheme === 'aura') {
+      refreshRevealEls();
+      updateRevealHighlights();
+    }
+  });
+}
+
 function setBpm(next) {
   bpm = Math.max(40, Math.min(220, Math.round(next)));
-  bpmValue.value = bpm;
   if (topBpmValue) topBpmValue.value = bpm;
   // 重音动画时长为 2 个 16 分音符的 70%，提前一列触发，峰值正好对齐当前播放列
   document.documentElement.style.setProperty("--beat-accent-duration", `${(0.5 * 60 * 0.7) / bpm}s`);
@@ -2345,7 +2438,7 @@ function commitBpmInput(input) {
   else input.value = bpm;
 }
 
-[bpmValue, topBpmValue].forEach((input) => {
+[topBpmValue].forEach((input) => {
   if (!input) return;
   input.addEventListener("change", () => commitBpmInput(input));
   input.addEventListener("keydown", (e) => {
@@ -2380,8 +2473,6 @@ function setupBpmStepper(btn, delta) {
   btn.addEventListener("touchend", end);
 }
 
-setupBpmStepper(bpmMinus, -1);
-setupBpmStepper(bpmPlus, 1);
 if (topBpmMinus) setupBpmStepper(topBpmMinus, -1);
 if (topBpmPlus) setupBpmStepper(topBpmPlus, 1);
 
@@ -2719,3 +2810,4 @@ syncDomToBank();
 updateVisualization();
 setVolume(volume);
 setBpm(bpm);
+updateAppHeight();

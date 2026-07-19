@@ -4,10 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>FourFour 放肆 — Drum Machine</title>
-  <link rel="stylesheet" href="style.css?rev=97" />
+  <link rel="stylesheet" href="style.css?rev=118" />
 </head>
 <body>
-  <main class="app">
+  <div class="app-scaler">
+    <main class="app">
     <section class="main-area">
       <header class="top-bar">
         <div class="brand">
@@ -121,15 +122,6 @@
         </div>
 
         <div class="setting-section">
-          <label class="section-label">BPM</label>
-          <div class="bpm-control">
-            <button class="step-btn" id="bpmMinus" aria-label="减小 BPM">−</button>
-            <input type="number" id="bpmValue" class="bpm-value" value="110" min="40" max="220" aria-label="BPM">
-            <button class="step-btn" id="bpmPlus" aria-label="增大 BPM">+</button>
-          </div>
-        </div>
-
-        <div class="setting-section">
           <label class="section-label">Rhythm</label>
           <div class="chip-grid" id="rhythmChips">
             <button class="chip active">Rock</button>
@@ -187,6 +179,7 @@
       </svg>
     </button>
   </main>
+</div>
 
   <div class="confirm-modal" id="clearConfirmModal" role="dialog" aria-modal="true" aria-labelledby="clearConfirmTitle" hidden>
     <div class="confirm-modal-backdrop"></div>
@@ -201,6 +194,6 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js"></script>
-  <script src="script.js?rev=100"></script>
+  <script src="script.js?rev=119"></script>
 </body>
 </html>
